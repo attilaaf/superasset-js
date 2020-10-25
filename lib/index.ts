@@ -49,15 +49,13 @@ export interface AssetState {
   index: string;
   txoutpoint: string;
   assetId: AssetID;
-  assetCode: string;
-  assetCodeHex: string;
+  assetStaticCode: string;
   assetLockingScript: string;
   assetOwnerPublicKey: string;
   assetSatoshis: number,
   assetPayload: string | null,
   meltedAssetId?: string,
-  meltedAssetCode?: string,
-  meltedAssetCodeHex?: string,
+  meltedAssetStaticCode?: string,
   meltedAssetOwnerPublicKey?: string,
   meltedAssetSatoshis?: number,
 }
@@ -136,8 +134,7 @@ export class SA10 {
           txid: lockingTx.hash,
           index: 0,
           assetId: new AssetID(`${lockingTx.hash}00000000`),
-          assetCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
-          assetCodeHex: bsv.Script.fromASM(StandardContracts.getSuperAsset10().scryptDesc.asm).toHex(),
+          assetStaticCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
           assetLockingScript: initialLockingScript.toASM(),
           assetOwnerPublicKey: initialOwnerPublicKey,
           assetSatoshis: satoshis,
@@ -331,8 +328,7 @@ export class SA10 {
           index: 0, // Always to the 0th output
           txoutpoint: `${tx.hash}_o0`,
           assetId: assetState.assetId,
-          assetCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
-          assetCodeHex: bsv.Script.fromASM(StandardContracts.getSuperAsset10().scryptDesc.asm).toHex(),
+          assetStaticCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
           assetLockingScript: newLockingScript.toASM(),
           assetOwnerPublicKey: nextOwnerPublicKey,
           assetSatoshis: assetState.assetSatoshis,
@@ -485,8 +481,7 @@ export class SA10 {
           index: 0, // Always to the 0th output
           txoutpoint: `${tx.hash}_o0`,
           meltedAssetId: assetState.assetId,
-          meltedAssetCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
-          meltedAssetCodeHex: bsv.Script.fromASM(StandardContracts.getSuperAsset10().scryptDesc.asm).toHex(),
+          meltedAssetStaticCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
           meltedAssetOwnerPublicKey: receiverPublicKey,
           meltedAssetSatoshis: assetState.assetSatoshis
         });

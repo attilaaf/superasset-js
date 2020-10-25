@@ -61,6 +61,14 @@ var simpleasset = require('simpleasset');
 const sa10 = superasset.instance({
     feeb: 0.5,
 }).SA10({ verbose: true });
+
+// Set up the keys used below.
+const privateKey1= new bsv.PrivateKey('wifkey1');
+const publicKey1 = bsv.PublicKey.fromPrivateKey(privateKey1)
+
+const privateKey2 = new bsv.PrivateKey('wifkey2')
+const publicKey2 = bsv.PublicKey.fromPrivateKey(privateKey2)
+
 // -----------------------------------------------------
 // DEPLOYMENT
 //
@@ -92,6 +100,8 @@ assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPu
 payloadUpdate = '012345';
 currentOwnerPrivateKey = privateKey2.toString();
 nextOwnerPublicKey = publicKey2.toString();
+
+// @param assetState: AssetState represents the
 assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
 
 // -----------------------------------------------------
