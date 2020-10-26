@@ -1,6 +1,6 @@
 {
   "name": "@matterpool/superasset-js",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "SuperAsset Javascript SDK - matterpool.io",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
