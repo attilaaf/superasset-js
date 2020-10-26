@@ -73,35 +73,46 @@ const publicKey2 = bsv.PublicKey.fromPrivateKey(privateKey2)
 // DEPLOYMENT
 //
 // Deploy NFT with initial owner and satoshis value of 7000 (Lower than this may hit dust limit)
+// Example: https://whatsonchain.com/tx/1bb01a6660b4f6b1cbb60ff141eea61052950fe75957026b79f7f62941d6e998
 const assetValue = 20000;
 const initialOwnerPublicKey = publicKey1.toString();
 const fundingPrivateKey = privateKey2.toString();
 let assetState = await sa10.deploy(initialOwnerPublicKey, assetValue, fundingPrivateKey);
 
 // -----------------------------------------------------
-// TRANSFER (AND UPDATE)
+// TRANSFER (AND UPDATE) - JSON Example
 //
-// Transfer and update payload (JSON example)
 // Note: The payload data must follow minimal push encoding rules.
 // Reference: https://github.com/moneybutton/bsv/blob/bsv-legacy/lib/script/script.js#L1083
 // Client can send NFT to a public key and keep funding input and change seperate
+// Example: https://whatsonchain.com/tx/cc97616a873c002abc42f03a51ed5611a89ac1cc619c8d3e343fd09a3bf2cb94
 let payloadUpdate = Buffer.from(`{ "hello": "world" }`, 'utf8').toString('hex');
 let currentOwnerPrivateKey = privateKey1.toString();
 let nextOwnerPublicKey = publicKey2.toString();
 assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
 
 // -----------------------------------------------------
-// TRANSFER (AND UPDATE)
+// TRANSFER (AND UPDATE) - HEX Binary Data Example
 //
-// Transfer and update payload (hex data example)
 // Note: The payload data must follow minimal push encoding rules.
 // Reference: https://github.com/moneybutton/bsv/blob/bsv-legacy/lib/script/script.js#L1083
 // Client can send NFT to a public key and keep funding input and change seperate
+// Example: https://whatsonchain.com/tx/23ff92f9026160a0f84ac578ac6bf2c0bfe516a8471523c12eb8f4a88a7a55d7
 payloadUpdate = '012345';
 currentOwnerPrivateKey = privateKey2.toString();
 nextOwnerPublicKey = publicKey2.toString();
+assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
 
-// @param assetState: AssetState represents the
+// -----------------------------------------------------
+// TRANSFER (AND UPDATE) - Empty/null Payload example
+//
+// Note: The payload data must follow minimal push encoding rules.
+// Reference: https://github.com/moneybutton/bsv/blob/bsv-legacy/lib/script/script.js#L1083
+// Client can send NFT to a public key and keep funding input and change seperate
+// Example: https://whatsonchain.com/tx/b2d5283b70414581188296cbf360f4a9ff089cd1fd6a9b3227964f76001cc5f8
+payloadUpdate = '';
+currentOwnerPrivateKey = privateKey2.toString();
+nextOwnerPublicKey = publicKey2.toString();
 assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
 
 // -----------------------------------------------------
@@ -109,6 +120,7 @@ assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPu
 //
 // Melt back to regular p2pkh satoshis
 // Client can send back NFT value to another address and keep change seperate
+// Example: https://whatsonchain.com/tx/ae44aaa9aad8433b74d1f6d9dedf57deb47ab3b9e671549bdd36b0ca9f8e9567
 payloadUpdate = null;
 currentOwnerPrivateKey = privateKey2.toString();
 let receiverPublicKey = publicKey2.toString();

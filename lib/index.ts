@@ -3,7 +3,6 @@ import axios from 'axios';
 
 import { StandardContracts } from './StandardContracts';
 import * as Minercraft from 'minercraft';
-// import * as filepay from 'filepay';
 const {
   bsv,
   buildContractClass,
@@ -124,24 +123,29 @@ export class SA10 {
         console.log('deploy::lockingTx', lockingTx);
       }
       // Publish initial deploy
+      console.log('mapi api', this.options.mapi_base_url);
       const miner = new Minercraft({
         url: this.options.mapi_base_url,
         headers: { 'content-type': 'application/json'}
       });
-      const response = await miner.tx.push(lockingTx.toString(), {});
-      if (response && response.returnResult === 'success' && response.txid === lockingTx.hash) {
-        return resolve({
-          txid: lockingTx.hash,
-          index: 0,
-          assetId: new AssetID(`${lockingTx.hash}00000000`),
-          assetStaticCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
-          assetLockingScript: initialLockingScript.toASM(),
-          assetOwnerPublicKey: initialOwnerPublicKey,
-          assetSatoshis: satoshis,
-          assetPayload: null,
-        });
-      }
+      try {
+        const response = await miner.tx.push(lockingTx.toString(), {});
+        if (response && response.returnResult === 'success' && response.txid === lockingTx.hash) {
+          return resolve({
+            txid: lockingTx.hash,
+            index: 0,
+            assetId: new AssetID(`${lockingTx.hash}00000000`),
+            assetStaticCode: StandardContracts.getSuperAsset10().scryptDesc.asm,
+            assetLockingScript: initialLockingScript.toASM(),
+            assetOwnerPublicKey: initialOwnerPublicKey,
+            assetSatoshis: satoshis,
+            assetPayload: null,
+          });
+        }
         reject(response);
+      } catch (err) {
+        reject(err);
+      }
     })
   }
 
