@@ -1,7 +1,7 @@
 /**
  * This is an implementation and sample usage of SuperAsset (SA10).
  *
- * Learn more:
+ * Learn mor
  *  - Announcement: https://blog.matterpool.io/launch-of-superasset-sa10-nft-smart-contract-for-bitcoin/
  *  - SuperAsset white paper: https://bitcoinfiles.org/t/d6c18189966ea060452bcf59157235f2e15df3abf7383d9d450acff69cf29181
  *  - Github: https://github.com/MatterPool/superasset-js
@@ -23,11 +23,11 @@ var bsv = require('bsv');
 
 // Generate your own private keys (Ex: https://console.matterpool.io/tools)
 // And fund the addresses for them.
-const privateKey1= new bsv.PrivateKey('wifkey1');
+const privateKey1= new bsv.PrivateKey('key1');
 const publicKey1 = bsv.PublicKey.fromPrivateKey(privateKey1)
 console.log('privateKey1', privateKey1, publicKey1, publicKey1.toAddress().toString());
 
-const privateKey2 = new bsv.PrivateKey('wifkey2')
+const privateKey2 = new bsv.PrivateKey('key2')
 const publicKey2 = bsv.PublicKey.fromPrivateKey(privateKey2)
 console.log('privateKey2', privateKey2, publicKey2, publicKey2.toAddress().toString());
 
@@ -43,7 +43,7 @@ describe('SA10', () => {
    it('Deploy, Tranfer Multiple Times with Different Payloads (Same owner) and Melt', async () => {
       const sa10 = index.instance({
          feeb: 0.25,
-      }).SA10({ verbose: true, });
+      }).SA10({ verbose: true });
       // -----------------------------------------------------
       // Step 1: Deploy NFT with initial owner and satoshis value of 2650 (Lower than this may hit dust limit)
       const assetValue = 20000;
@@ -80,11 +80,10 @@ describe('SA10', () => {
       let payloadUpdate = Buffer.from(`{ "hello": "world" }`, 'utf8').toString('hex');
       let currentOwnerPrivateKey = privateKey1.toString();
       let nextOwnerPublicKey = publicKey2.toString();
-      console.log('payloadData', payloadUpdate);
       try {
          assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
          console.log('Step 2. txid: ', assetState.txid);
-         console.log('assetId', assetState.assetId.toString(), assetState.assetId.toLE());
+         console.log('assetId', assetState.assetId.toString(), "LE:", assetState.assetId.toLE());
          let assetClone = Object.assign({}, assetState);
          delete assetClone.assetId;
          delete assetClone.txoutpoint;
@@ -112,7 +111,7 @@ describe('SA10', () => {
       try {
          assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
          console.log('Step 3. txid: ', assetState.txid);
-         console.log('assetId', assetState.assetId.toString(), assetState.assetId.toLE());
+         console.log('assetId', assetState.assetId.toString(), "LE:", assetState.assetId.toLE());
          let assetClone = Object.assign({}, assetState);
          delete assetClone.assetId;
          delete assetClone.txoutpoint;
@@ -140,7 +139,7 @@ describe('SA10', () => {
       try {
          assetState = await sa10.transfer(assetState, currentOwnerPrivateKey, nextOwnerPublicKey, fundingPrivateKey, payloadUpdate);
          console.log('Step 4. txid: ', assetState.txid);
-         console.log('assetId', assetState.assetId.toString(), assetState.assetId.toLE());
+         console.log('assetId', assetState.assetId.toString(), "LE:", assetState.assetId.toLE());
          let assetClone = Object.assign({}, assetState);
          delete assetClone.assetId;
          delete assetClone.txoutpoint;
@@ -168,7 +167,7 @@ describe('SA10', () => {
       try {
          assetState = await sa10.melt(assetState, currentOwnerPrivateKey, receiverPublicKey, fundingPrivateKey);
          console.log('Step 5. txid: ', assetState.txid);
-         console.log('meltedAssetId', assetState.meltedAssetId.toString(), assetState.meltedAssetId.toLE());
+         console.log('meltedAssetId', assetState.meltedAssetId.toString(), "LE ", assetState.meltedAssetId.toLE());
          let assetClone = Object.assign({}, assetState);
          delete assetClone.meltedAssetId;
          delete assetClone.txoutpoint;
