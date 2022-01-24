@@ -1,6 +1,7 @@
-
-import axios from 'axios';
-import { Factory } from './Factory';
+import { BNSInterface } from "./BNS.interface";
+import { NameInterface } from "./Name.interface";
+import { ResolverInterface } from "./Resolver.interface";
+import { ResolverConfigInterface } from "./ResolverConfig.interface";
 
 const defaultOptions: any = {
   api: 'https://api.mattercloud.io/api/v3/main/address/ADDRESS_STR/utxo', // Use ADDRESS_STR as replacement
@@ -9,34 +10,26 @@ const defaultOptions: any = {
   verbose: false,
 }
 
-export class SuperAssetClient {
-  options;
-  constructor(providedOptions?: any) {
-    this.options = Object.assign({}, defaultOptions, providedOptions);
+export class BNS implements BNSInterface {
+  // get a resolver. Uses default if no alternative configuration is provided
+  public resolver(config?: ResolverConfigInterface): ResolverInterface {
+    return {
+      url: 'as'
+    }; 
   }
-
-  setOptions(newOptions) {
-    this.options = Object.assign({}, this.options, newOptions);
-  }
-
-  public factory() {
-    return Factory;
-  }
-  
-  instance(newOptions?: any): SuperAssetClient {
-    const mergedOptions = Object.assign({}, defaultOptions, newOptions);
-    return new SuperAssetClient(mergedOptions);
+  // Uses default resolver underneath
+  public async getName(name: string): Promise<NameInterface> {
+    return this.resolver().getName(name);
   }
 }
 
-export function instance(newOptions?: any): SuperAssetClient {
-  const mergedOptions = Object.assign({}, defaultOptions, newOptions);
-  return new SuperAssetClient(mergedOptions);
+export function instance(): BNSInterface {
+  return new BNS();
 }
 
 try {
   if (window) {
-    window['superasset'] = {
+    window['BNS'] = {
       instance: instance
     };
   }
