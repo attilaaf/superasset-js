@@ -1,3 +1,4 @@
 export interface ResolverConfigInterface { 
-    url: string;
+    root?: string;
+    url?: string;
 }
