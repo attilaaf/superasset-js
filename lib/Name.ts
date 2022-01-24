@@ -5,7 +5,7 @@ import { ParameterMissingError } from "./errors/ParameterMissingError";
 import { NameInterface } from "./Name.interface";
 import { OpResult } from "./OpResult.interface";
 import { Record } from "./Record.interface.ts";
-import { bsv } from 'bsv';
+import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 
 export class Name implements NameInterface { 
@@ -27,14 +27,21 @@ export class Name implements NameInterface {
         if (!expectedRoot) {
             throw new ParameterExpectedRootEmptyError();
         }
+        console.log('rawtxs', rawtxs);
         const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const calculatedRoot = (await tx.hash()).toString('hex');
+        console.log('calc', expectedRoot, calculatedRoot);
         if (expectedRoot !== calculatedRoot) {
             throw new ParameterExpectedRootMismatchError();
         }
+
+        this.expectedRoot = calculatedRoot;
         for (const rawtx of rawtxs) {
 
         }
+    }
+    public getRoot(): string {
+        return this.expectedRoot;
     }
     public async getOwner(): Promise<BitcoinAddress> {
         return new BitcoinAddress('11');

@@ -13,6 +13,8 @@ export interface NameInterface {
     setRecord: (type: string, name: string, value: string, ttl?: number) => Promise<OpResult>;
     // Delete a record
     deleteRecord: (type: string, name: string) => Promise<OpResult>;
+    // The root of this name tree
+    getRoot: () => string;
     // Helpers that use getRecords and setRecord underneath...
     // Get address for a specific coin if it is set (Uses getRecords underneath)
     getAddress: (coinId: string) => Promise<string>;
