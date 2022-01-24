@@ -15,6 +15,8 @@ export interface NameInterface {
     deleteRecord: (type: string, name: string) => Promise<OpResult>;
     // The root of this name tree
     getRoot: () => string;
+    // The root of this name tree
+    getNameString: () => string;
     // Helpers that use getRecords and setRecord underneath...
     // Get address for a specific coin if it is set (Uses getRecords underneath)
     getAddress: (coinId: string) => Promise<string>;

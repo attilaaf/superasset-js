@@ -44,4 +44,17 @@ describe('bns.name', () => {
       ], expectedRoot);
       expect(name.getRoot()).to.eql(expectedRoot);
    });
+   it('#getNameString should fail throw NotInitError', async () => {
+      const name = new index.Name();
+      expect(name.getNameString()).to.throw(index.NotInitError)
+   });
+   it('#constructor should fail insufficient branch', async () => {
+      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
+      const name = new index.Name();
+      const expectedRoot = (await tx.hash()).toString('hex');
+      await name.init([
+         rootTx, rootTxExtend, rootTxExtendA
+      ], expectedRoot);
+      expect(name.getNameString()).to.eql('a.based');
+   });
 });
