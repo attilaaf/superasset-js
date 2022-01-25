@@ -46,15 +46,21 @@ describe('bns.name', () => {
    });
    it('#getNameString should fail throw NotInitError', async () => {
       const name = new index.Name();
-      expect(name.getNameString()).to.throw(index.NotInitError)
+      expect(name.getNameString()).to.eventually.be.rejectedWith(index.NotInitError)
    });
-   it('#constructor should fail insufficient branch', async () => {
+   it('#constructor should fail root unexpected output hash', async () => {
+      const name = new index.Name();
+      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTxExtend, 'hex'));
+      const expectedRoot = (await tx.hash()).toString('hex');
+      expect(name.init([rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.RootOutputHashMismatchError)
+   });
+   it('#constructor should fail unclaimed branch', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
-      expect(name.getNameString()).to.eql('a.based');
+      expect(name.getNameString()).to.eql('aaaaaaaaa.based');
    });
 });

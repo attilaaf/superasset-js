@@ -7,6 +7,7 @@ export { Name } from "./Name";
 export { ParameterMissingError } from "./errors/ParameterMissingError";
 export { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 export { ParameterExpectedRootEmptyError } from "./errors/ParameterExpectedRootEmptyError";
+export { NotInitError } from "./errors/NotInitError";
 export { BitcoinAddress } from "./BitcoinAddress";
  
 const defaultOptions: any = {

@@ -8,6 +8,9 @@ import { Record } from "./Record.interface.ts";
 import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
+import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
+
+const BNS_ROOT_OUTPUT_RIPEMD160 = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
 
 export class Name implements NameInterface { 
     private initialized = false;
@@ -29,18 +32,27 @@ export class Name implements NameInterface {
         if (!expectedRoot) {
             throw new ParameterExpectedRootEmptyError();
         }
-        console.log('rawtxs', rawtxs);
-        const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await tx.hash()).toString('hex');
-        console.log('calc', expectedRoot, calculatedRoot);
+        const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
+        const calculatedRoot = (await rootTx.hash()).toString('hex');
         if (expectedRoot !== calculatedRoot) {
             throw new ParameterExpectedRootMismatchError();
         }
-
-        this.expectedRoot = calculatedRoot;
-        for (const rawtx of rawtxs) {
-
+        // Make sure the first output is a BNS output of a known hash type
+        const outputHash = bsv.Hash.ripemd160(rootTx.txOuts[0].script.toBuffer()).toString('hex');
+        if (BNS_ROOT_OUTPUT_RIPEMD160 !== outputHash) {
+            throw new RootOutputHashMismatchError();
         }
+        this.expectedRoot = calculatedRoot;
+        let prefix = '';
+        let txMap = {};
+        for (const rawtx of rawtxs) { 
+            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtx, 'hex'));
+            console.log('tx', tx);
+            const txId = (await tx.hash()).toString('hex');
+            console.log('txId', txId, tx.txOuts[0].script);
+            txMap[txId + '00000000'] = tx.txOuts[0];
+        }
+        console.log('txMap', txMap);
         this.initialized = true;
     }
     public getRoot(): string {
