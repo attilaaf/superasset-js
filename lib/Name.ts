@@ -9,6 +9,7 @@ import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
+import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 
 const BNS_ROOT_OUTPUT_RIPEMD160 = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
 
@@ -44,12 +45,22 @@ export class Name implements NameInterface {
         }
         this.expectedRoot = calculatedRoot;
         let prefix = '';
-        let txMap = {};
-        for (const rawtx of rawtxs) { 
-            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtx, 'hex'));
-            console.log('tx', tx);
+        let txMap = {
+        };
+        txMap[`${calculatedRoot + '00000000'}`] = rootTx;
+        for (let i = 1; i < rawtxs.length; i++) {  
+            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
             const txId = (await tx.hash()).toString('hex');
-            console.log('txId', txId, tx.txOuts[0].script);
+            const prevTxId = tx.txIns[0].txHashBuf.toString('hex');
+            const txOutNum = tx.txIns[0].txOutNum;
+            const buf = Buffer.allocUnsafe(4);
+            buf.writeInt32LE(txOutNum);
+            const txOutNumberString = buf.toString('hex');
+            const prevOutpoint = prevTxId + txOutNumberString;
+            console.log('prevOutpoint', prevOutpoint);
+            if (!txMap[prevOutpoint]) {
+                throw new PrefixChainMismatchError();
+            }
             txMap[txId + '00000000'] = tx.txOuts[0];
         }
         console.log('txMap', txMap);

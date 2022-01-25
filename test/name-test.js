@@ -44,23 +44,27 @@ describe('bns.name', () => {
       ], expectedRoot);
       expect(name.getRoot()).to.eql(expectedRoot);
    });
-   it('#getNameString should fail throw NotInitError', async () => {
-      const name = new index.Name();
-      expect(name.getNameString()).to.eventually.be.rejectedWith(index.NotInitError)
-   });
    it('#constructor should fail root unexpected output hash', async () => {
       const name = new index.Name();
       const tx = bsv.Tx.fromBuffer(Buffer.from(rootTxExtend, 'hex'));
       const expectedRoot = (await tx.hash()).toString('hex');
       expect(name.init([rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.RootOutputHashMismatchError)
    });
-   it('#constructor should fail unclaimed branch', async () => {
+   it('#constructor should succeed with unclaimed branch', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
-      expect(name.getNameString()).to.eql('aaaaaaaaa.based');
+      expect(name.getNameString()).to.eql('a');
+   });
+   it('#getNameString should fail throw NotInitError', async () => {
+      const name = new index.Name();
+      try {
+         name.getNameString();
+      } catch (err){
+         expect(err instanceof index.NotInitError).to.be.true;
+      }
    });
 });
