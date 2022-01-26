@@ -1,4 +1,5 @@
 export interface PrefixParseResult {    
-    rawtxIndex: number;
+    rawtxIndexForClaim: number;
     nameString: string;
+    isClaimed: boolean;
 }

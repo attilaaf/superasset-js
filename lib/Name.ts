@@ -11,6 +11,7 @@ import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
 import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
+import { prevOutpointFromTxIn } from "./Helpers";
 
 const BNS_ROOT_OUTPUT_RIPEMD160 = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
 
@@ -46,50 +47,62 @@ export class Name implements NameInterface {
         }
         this.expectedRoot = calculatedRoot;
         const result: PrefixParseResult = await this.validatePrefixTree(rawtxs);
-        await this.validateBuildRecords(rawtxs.slice(result.rawtxIndex));
+        console.log('result', result);
+        await this.validateBuildRecords(rawtxs.slice(result.rawtxIndexForClaim));
         this.initialized = true;
     }
 
     private async validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
         const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const calculatedRoot = (await rootTx.hash()).toString('hex');
-        let prefix = '';
         let prefixMap = {};
-        let potentialClaimMap = {};
         prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
         let nameAssetId = '';
         let nameString = '';
-        let namePrefixTree: string[] = [];
+        let prevPotentialClaimNft = '';
+        let prevTx = rootTx;
         for (let i = 1; i < rawtxs.length; i++) {  
             const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
             const txId = (await tx.hash()).toString('hex');
-            const prevTxId = tx.txIns[0].txHashBuf.toString('hex');
-            const txOutNum = tx.txIns[0].txOutNum;
-            const buf = Buffer.allocUnsafe(4);
-            buf.writeInt32LE(txOutNum);
-
-            const txOutNumberString = buf.toString('hex');
-            const prevOutpoint = prevTxId + txOutNumberString;
-
-            console.log('txMap', prefixMap);
-            console.log('txOutNumberString', txOutNumberString, prevOutpoint);
+            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
             // Enforce that each spend in the chain spends something from before
             if (!prefixMap[prevOutpoint]) {
-                throw new PrefixChainMismatchError();
+                // Perhaps this is the claimNFT being spent?
+                if (prevPotentialClaimNft === prevOutpoint) {
+                    // Found a spend of a claim, return the position of the previous index then
+                    // Return because we have successfully resolved the prefix tree to the location of the claim NFT that was spent.
+                    return {
+                        rawtxIndexForClaim: i - 1,
+                        nameString,
+                        isClaimed: true,
+                    }
+                } else {
+                    throw new PrefixChainMismatchError();
+                }
+            } else {
+                // Do not concat the root node, skip it
+                if (i > 1) {
+                    const prevTxOut = prevTx.txOuts[outputIndex];
+                    const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
+                    console.log('letter', letter);
+                    nameString += letter; // Add the current letter that was spent
+                }
             }
             // Clear off the map to ensure a rawtx must spend something directly of it's parent
             prefixMap = {};
+            prevPotentialClaimNft = txId + '00000000'; // Potential NFT is always at position 1
             for (let o = 1; o < 38; o++) {  
                 const buf = Buffer.allocUnsafe(4);
                 buf.writeInt32LE(o);
                 const outNumString = buf.toString('hex');
                 prefixMap[txId + outNumString] = tx.txOuts[o];
             }
+            prevTx = tx;
         }
-        // console.log('txMap', txMap);
         return {
-            rawtxIndex: 0,
-            nameString: ''
+            rawtxIndexForClaim: rawtxs.length - 1,
+            nameString,
+            isClaimed: false,
         }
     }
 
