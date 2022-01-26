@@ -50,14 +50,27 @@ describe('bns.name', () => {
       const expectedRoot = (await tx.hash()).toString('hex');
       expect(name.init([rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.RootOutputHashMismatchError)
    });
+   it('#constructor should fail with no spend of letter yet', async () => {
+      const name = new index.Name();
+      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
+      const expectedRoot = (await tx.hash()).toString('hex');
+      expect(name.init([rootTx, rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.ParameterListInsufficientError)
+      try {
+         await name.init([rootTx, rootTxExtend], expectedRoot)
+      } catch (err) {
+         expect(err.toString()).to.eql('ParameterListInsufficientError')
+      }
+   });
+
    it('#constructor should succeed with unclaimed branch', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
+      console.log('expected', expectedRoot)
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
-      expect(name.getNameString()).to.eql('a');
+      expect(name.getNameString()).to.eql('b');
    });
    it('#getNameString should fail throw NotInitError', async () => {
       const name = new index.Name();
@@ -65,6 +78,8 @@ describe('bns.name', () => {
          name.getNameString();
       } catch (err){
          expect(err instanceof index.NotInitError).to.be.true;
+         return;
       }
+      expect(false).to.be.true;
    });
 });

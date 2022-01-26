@@ -7,6 +7,9 @@ export { Name } from "./Name";
 export { ParameterMissingError } from "./errors/ParameterMissingError";
 export { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 export { ParameterExpectedRootEmptyError } from "./errors/ParameterExpectedRootEmptyError";
+export { ParameterListInsufficientSpendError } from "./errors/ParameterListInsufficientSpendError";
+export { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
+export { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
 export { NotInitError } from "./errors/NotInitError";
 export { BitcoinAddress } from "./BitcoinAddress";
  

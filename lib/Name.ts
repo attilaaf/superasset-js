@@ -1,4 +1,4 @@
-import { ParameterExpectedRootEmptyError } from ".";
+import { ParameterExpectedRootEmptyError, ParameterListInsufficientSpendError } from ".";
 import { BitcoinAddress } from "./BitcoinAddress";
 import { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 import { ParameterMissingError } from "./errors/ParameterMissingError";
@@ -14,9 +14,11 @@ import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { prevOutpointFromTxIn } from "./Helpers";
 
 const BNS_ROOT_OUTPUT_RIPEMD160 = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
-
+ 
 export class Name implements NameInterface { 
     private initialized = false;
+    private nameString = '';
+    public isClaimed = false;
     public rawtxs: string[] = [];
     public expectedRoot: string = '';
 
@@ -47,8 +49,8 @@ export class Name implements NameInterface {
         }
         this.expectedRoot = calculatedRoot;
         const result: PrefixParseResult = await this.validatePrefixTree(rawtxs);
-        console.log('result', result);
         await this.validateBuildRecords(rawtxs.slice(result.rawtxIndexForClaim));
+        this.nameString = result.nameString;
         this.initialized = true;
     }
 
@@ -99,6 +101,9 @@ export class Name implements NameInterface {
             }
             prevTx = tx;
         }
+        if (nameString === '') {
+            throw new ParameterListInsufficientSpendError();
+        }
         return {
             rawtxIndexForClaim: rawtxs.length - 1,
             nameString,
@@ -116,7 +121,7 @@ export class Name implements NameInterface {
     }
     public getNameString(): string {
         this.ensureInit();
-        return 'dd';
+        return this.nameString;
     }
     public async getOwner(): Promise<BitcoinAddress> {
         this.ensureInit();
