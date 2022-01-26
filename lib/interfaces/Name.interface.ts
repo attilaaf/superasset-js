@@ -1,4 +1,5 @@
-import { BitcoinAddress } from "./BitcoinAddress";
+
+import { BitcoinAddress } from "..";
 import { OpResult } from "./OpResult.interface";
 import { Record } from "./Record.interface.ts";
 

@@ -1,8 +1,8 @@
-import { BNSInterface } from "./BNS.interface";
-import { NameInterface } from "./Name.interface";
+import { BNSInterface } from "./interfaces/BNS.interface";
+import { NameInterface } from "./interfaces/Name.interface";
 import { Resolver } from "./Resolver";
-import { ResolverInterface } from "./Resolver.interface";
-import { ResolverConfigInterface } from "./ResolverConfig.interface";
+import { ResolverInterface } from "./interfaces/Resolver.interface";
+import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 export { Name } from "./Name";
 export { ParameterMissingError } from "./errors/ParameterMissingError";
 export { ParameterListEmptyError } from "./errors/ParameterListEmptyError";

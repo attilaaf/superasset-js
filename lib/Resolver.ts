@@ -1,7 +1,7 @@
 import { Name } from "./Name";
-import { NameInterface } from "./Name.interface";
-import { ResolverInterface } from "./Resolver.interface";
-import { ResolverConfigInterface } from "./ResolverConfig.interface";
+import { NameInterface } from "./interfaces/Name.interface";
+import { ResolverInterface } from "./interfaces/Resolver.interface";
+import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 
 const BNS_ROOT = '';
 const BNS_API_URL = 'https://resolver.based.org/api/v1';
