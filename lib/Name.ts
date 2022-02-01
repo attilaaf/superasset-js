@@ -115,6 +115,11 @@ export class Name implements NameInterface {
         return [];
     }
 
+    public isClaimSpent(): boolean {
+        this.ensureInit();
+        return this.isClaimed;
+    }
+    
     public getRoot(): string {
         this.ensureInit();
         return this.expectedRoot;

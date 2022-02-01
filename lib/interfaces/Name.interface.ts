@@ -16,6 +16,8 @@ export interface NameInterface {
     deleteRecord: (type: string, name: string) => Promise<OpResult>;
     // The root of this name tree
     getRoot: () => string;
+    // Whether there was a spend of the claim tx
+    isClaimSpent: () => boolean;
     // The root of this name tree
     getNameString: () => string;
     // Helpers that use getRecords and setRecord underneath...

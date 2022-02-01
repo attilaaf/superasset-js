@@ -6,6 +6,7 @@ var chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
 var Name = require('../dist/Name.js');
+var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
 var bsv = require('bsv');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
@@ -62,16 +63,29 @@ describe('bns.name', () => {
       }
    });
 
-   it('#constructor should succeed with unclaimed branch', async () => {
+   it('#constructor should succeed with unclaimed branch is set isClaimSpent as false', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
-      console.log('expected', expectedRoot)
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
       expect(name.getNameString()).to.eql('b');
+      expect(name.isClaimSpent()).to.eql(false);
    });
+
+   it('#constructor should succeed with unclaimed branch is set isClaimSpent as false for BA', async () => {
+      const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
+      const name = new index.Name();
+      const expectedRoot = (await tx.hash()).toString('hex');
+      await name.init([
+         baRoot, baRootExtend, baRootExtendB, baRootExtendBA
+        // rootTx, rootTxExtend, rootTxExtendA
+      ], expectedRoot);
+      expect(name.getNameString()).to.eql('ba');
+      expect(name.isClaimSpent()).to.eql(false);
+   });
+
    it('#getNameString should fail throw NotInitError', async () => {
       const name = new index.Name();
       try {
