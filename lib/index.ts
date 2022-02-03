@@ -11,6 +11,7 @@ export { ParameterListInsufficientSpendError } from "./errors/ParameterListInsuf
 export { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 export { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
 export { NotInitError } from "./errors/NotInitError";
+export { NFTChainError } from "./errors/NFTChainError";
 export { BitcoinAddress } from "./BitcoinAddress";
  
 const defaultOptions: any = {

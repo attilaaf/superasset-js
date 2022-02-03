@@ -1,15 +1,16 @@
 
 import { BitcoinAddress } from "..";
+import { NameInfo } from "./NameInfo.interface";
 import { OpResult } from "./OpResult.interface";
 import { Record } from "./Record.interface.ts";
 
 export interface NameInterface { 
     // The current owner of the name UTXO
-    getOwner: () => Promise<BitcoinAddress>;
+    getOwner: () => BitcoinAddress | null;
     // Set the new owner of the name UTXO (transfer)
     setOwner: (address: BitcoinAddress) => Promise<OpResult>;
     // Enumerate all records
-    getRecords: () => Promise<Record[]>;
+    getNameInfo: () => NameInfo | null;
     // Update a record
     setRecord: (type: string, name: string, value: string, ttl?: number) => Promise<OpResult>;
     // Delete a record
@@ -25,5 +26,7 @@ export interface NameInterface {
     getAddress: (coinId: string) => Promise<string>;
     // Set an address for a specific coin (uses setRecord underneath)
     setAddress: (coinId: string, address: string) => Promise<OpResult>;
+    // Is Testnet
+    isTestnet: () => boolean;
 }
  
