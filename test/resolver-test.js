@@ -40,5 +40,29 @@ describe('Resolver', () => {
       const name = await resolver.getName('b');
       expect(name.getNameString()).to.eql('b');
    });
+
+   it('#getName should succeed matched default root', async () => {
+      const resolver = index.Resolver.create({
+         processGetNameTransactions: function(name, cfg) {
+            return [
+               rootTx, rootTxExtend, rootTxExtendA
+            ]
+         }
+      });
+      const name = await resolver.getName('b');
+      expect(name.getNameString()).to.eql('b');
+   });
+
+   it('#getName should succeed fail default root', async () => {
+      const resolver = index.Resolver.create({
+         processGetNameTransactions: function(name, cfg) {
+            return [
+               // Use the 'wrong' root for this test
+               baRoot, baRootExtend, baRootExtendB, baRootExtendBA
+            ]
+         }
+      });
+      expect(resolver.getName('ba')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
+   });
     
 });

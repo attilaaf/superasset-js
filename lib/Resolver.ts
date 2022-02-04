@@ -3,7 +3,7 @@ import { NameInterface } from "./interfaces/Name.interface";
 import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 
-const BNS_ROOT = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
+const BNS_ROOT = '1495550c8f58cfe0b23c4f8205662eaf02978676a3a5eddc905feb23fb7024b7';
 const BNS_API_URL = 'https://resolver.based.org/api/v1';
 
 export class Resolver implements ResolverInterface { 
