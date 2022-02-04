@@ -14,8 +14,6 @@ import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { prevOutpointFromTxIn } from "./Helpers";
 import { NameInfo } from "./interfaces/NameInfo.interface";
 
-const BNS_ROOT_OUTPUT_RIPEMD160 = 'b3b582b4ae134d329c99ef665b7e31b226892a17';
- 
 export class Name implements NameInterface { 
     private initialized = false;
     private nameString = '';
@@ -25,7 +23,8 @@ export class Name implements NameInterface {
     public rawtxs: string[] = [];
     public expectedRoot: string = '';
 
-    constructor(private opts?: { testnet: boolean }) {
+    constructor(private opts?: { testnet: boolean }, private bnsOutputRipemd160?: string) {
+        this.bnsOutputRipemd160 = this.bnsOutputRipemd160 ? this.bnsOutputRipemd160 : 'b3b582b4ae134d329c99ef665b7e31b226892a17';
     }
 
     async init(rawtxs?: string[], expectedRoot?: string) {
@@ -48,7 +47,7 @@ export class Name implements NameInterface {
         }
         // Make sure the first output is a BNS output of a known hash type
         const outputHash = bsv.Hash.ripemd160(rootTx.txOuts[0].script.toBuffer()).toString('hex');
-        if (BNS_ROOT_OUTPUT_RIPEMD160 !== outputHash) {
+        if (this.bnsOutputRipemd160 !== outputHash) {
             throw new RootOutputHashMismatchError();
         }
         this.expectedRoot = calculatedRoot;
@@ -90,7 +89,6 @@ export class Name implements NameInterface {
                 if (i > 1) {
                     const prevTxOut = prevTx.txOuts[outputIndex];
                     const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
-                    console.log('letter', letter);
                     nameString += letter; // Add the current letter that was spent
                 }
             }

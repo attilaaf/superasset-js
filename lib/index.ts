@@ -4,6 +4,7 @@ import { Resolver } from "./Resolver";
 import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 export { Name } from "./Name";
+export { Resolver } from "./Resolver";
 export { ParameterMissingError } from "./errors/ParameterMissingError";
 export { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 export { ParameterExpectedRootEmptyError } from "./errors/ParameterExpectedRootEmptyError";
@@ -24,7 +25,7 @@ const defaultOptions: any = {
 export class BNS implements BNSInterface {
   // get a resolver. Uses default if no alternative configuration is provided
   public resolver(config?: ResolverConfigInterface): ResolverInterface {
-    return Resolver.createResolver(config);
+    return Resolver.create(config);
   }
   // Uses default resolver underneath
   public async getName(name: string): Promise<NameInterface> {

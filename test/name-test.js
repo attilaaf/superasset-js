@@ -92,7 +92,7 @@ describe('Name', () => {
       expect(false).to.be.true;
    });
 
-   it('#constructor should succeed with unclaimed branch is set isClaimSpent as false for BA', async () => {
+   it('#getOwner should succeed with the default unclaimed address', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const name = new index.Name({testnet: true});
       const expectedRoot = (await tx.hash()).toString('hex');
