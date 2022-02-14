@@ -68,6 +68,29 @@ describe('Resolver', () => {
       expect(name.getNameString()).to.eql('b');
    });
 
+   it('#getName should fail invalid transactions due to incomplete', async () => {
+      const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
+      const root = (await tx.hash()).toString('hex');
+      const resolver = index.Resolver.create({
+         processGetNameTransactions: function(name, cfg) {
+            return {
+               result: 'success',
+               rawtxs: [
+                  baRoot, baRootExtend, baRootExtendB
+               ]
+            };
+         },
+         root
+      });
+      try {
+         await resolver.getName('ba')
+      } catch (err){
+         expect(err instanceof index.InvalidNameTransactionsError).to.be.true;
+         return;
+      }
+      expect(false).to.be.true;
+   });
+
    it('#getName should fail default root', async () => {
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
@@ -83,7 +106,7 @@ describe('Resolver', () => {
       expect(resolver.getName('ba')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
    });
 
-   it('#getName should fail not success fetch txs', async () => {
+   it('#getName should fail FETCH_ERROR', async () => {
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {

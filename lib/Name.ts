@@ -1,4 +1,4 @@
-import { NFTChainError, ParameterExpectedRootEmptyError, ParameterListInsufficientSpendError } from ".";
+import { InvalidNameTransactionsError, NFTChainError, ParameterExpectedRootEmptyError, ParameterListInsufficientSpendError } from ".";
 import { BitcoinAddress } from "./BitcoinAddress";
 import { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 import { ParameterMissingError } from "./errors/ParameterMissingError";
@@ -27,19 +27,22 @@ export class Name implements NameInterface {
         this.bnsOutputRipemd160 = this.bnsOutputRipemd160 ? this.bnsOutputRipemd160 : 'b3b582b4ae134d329c99ef665b7e31b226892a17';
     }
 
-    async init(rawtxs?: string[], expectedRoot?: string) {
+    async init(rawtxs: string[], expectedRoot?: string) {
         this.rawtxs = rawtxs ? rawtxs : [];
         this.expectedRoot = expectedRoot ? expectedRoot : '';
 
         if (!rawtxs) {
             throw new ParameterMissingError();
         }
+
         if (rawtxs.length === 0) {
             throw new ParameterListEmptyError();
         }
+
         if (!expectedRoot) {
             throw new ParameterExpectedRootEmptyError();
         }
+
         const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const calculatedRoot = (await rootTx.hash()).toString('hex');
         if (expectedRoot !== calculatedRoot) {
