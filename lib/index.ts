@@ -11,9 +11,11 @@ export { ParameterExpectedRootEmptyError } from "./errors/ParameterExpectedRootE
 export { ParameterListInsufficientSpendError } from "./errors/ParameterListInsufficientSpendError";
 export { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 export { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
+export { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 export { NotInitError } from "./errors/NotInitError";
 export { NFTChainError } from "./errors/NFTChainError";
 export { BitcoinAddress } from "./BitcoinAddress";
+export { GetNameTransactionsResult, GetNameTransactionsResultEnum  } from "./interfaces/GetNameTransactionsResult.interface";
  
 const defaultOptions: any = {
   api: 'https://api.mattercloud.io/api/v3/main/address/ADDRESS_STR/utxo', // Use ADDRESS_STR as replacement

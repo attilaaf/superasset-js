@@ -18,9 +18,12 @@ describe('Resolver', () => {
       const resolver = index.Resolver.create({
          root: 'abcd',
          processGetNameTransactions: function(name, cfg) {
-            return [
-               rootTx, rootTxExtend, rootTxExtendA
-            ]
+            return {
+               result: 'success',
+                  rawtxs: [
+                  rootTx, rootTxExtend, rootTxExtendA
+               ]
+            };
          }
       });
       expect(resolver.getName('b')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
@@ -32,9 +35,18 @@ describe('Resolver', () => {
       const resolver = index.Resolver.create({
          root: expectedRoot,
          processGetNameTransactions: function(name, cfg) {
-            return [
-               rootTx, rootTxExtend, rootTxExtendA
-            ]
+            return {
+               result: 'success',
+               rawtxs: [
+                  rootTx, rootTxExtend, rootTxExtendA
+               ]
+            };
+         },
+         // Todo implement SPV fetching
+         processGetSPV: function(txid, cfg) {
+            return {
+               result: 'success'
+            };
          }
       });
       const name = await resolver.getName('b');
@@ -44,25 +56,51 @@ describe('Resolver', () => {
    it('#getName should succeed matched default root', async () => {
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
-            return [
-               rootTx, rootTxExtend, rootTxExtendA
-            ]
+            return {
+               result: 'success',
+               rawtxs: [
+                  rootTx, rootTxExtend, rootTxExtendA
+               ]
+            };
          }
       });
       const name = await resolver.getName('b');
       expect(name.getNameString()).to.eql('b');
    });
 
-   it('#getName should succeed fail default root', async () => {
+   it('#getName should fail default root', async () => {
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
-            return [
-               // Use the 'wrong' root for this test
-               baRoot, baRootExtend, baRootExtendB, baRootExtendBA
-            ]
+            return {
+               result: 'success',
+               rawtxs: [
+                  // Use the 'wrong' root for this test
+                  baRoot, baRootExtend, baRootExtendB, baRootExtendBA
+               ]
+            };
          }
       });
       expect(resolver.getName('ba')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
    });
-    
+
+   it('#getName should fail not success fetch txs', async () => {
+      const resolver = index.Resolver.create({
+         processGetNameTransactions: function(name, cfg) {
+            return {
+               result: index.GetNameTransactionsResultEnum.FETCH_ERROR,
+               rawtxs: [
+                  rootTx, rootTxExtend, rootTxExtendA
+               ]
+            };
+         }
+      });
+      try {
+         await resolver.getName('ba')
+      } catch (err){
+         expect(err instanceof index.GetNameTransactionsError).to.be.true;
+         return;
+      }
+      expect(false).to.be.true;
+   });
+ 
 });
