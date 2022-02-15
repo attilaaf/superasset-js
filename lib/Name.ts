@@ -1,18 +1,18 @@
-import { InvalidNameTransactionsError, NFTChainError, ParameterExpectedRootEmptyError, ParameterListInsufficientSpendError } from ".";
+import { NFTChainError, ParameterExpectedRootEmptyError } from ".";
 import { BitcoinAddress } from "./BitcoinAddress";
 import { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 import { ParameterMissingError } from "./errors/ParameterMissingError";
 import { NameInterface } from "./interfaces/Name.interface";
 import { OpResult } from "./interfaces/OpResult.interface";
-import { Record } from "./interfaces/Record.interface.ts";
 import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
-import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { prevOutpointFromTxIn } from "./Helpers";
 import { NameInfo } from "./interfaces/NameInfo.interface";
+import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
+import { TreeProcessor } from "./TreeProcessor";
 
 export class Name implements NameInterface { 
     private initialized = false;
@@ -54,68 +54,12 @@ export class Name implements NameInterface {
             throw new RootOutputHashMismatchError();
         }
         this.expectedRoot = calculatedRoot;
-        const result: PrefixParseResult = await this.validatePrefixTree(rawtxs);
+        const treeProcessor: TreeProcessorInterface = new TreeProcessor();
+        const result: PrefixParseResult = await treeProcessor.validatePrefixTree(rawtxs);
         await this.validateBuildRecords(rawtxs.slice(result.rawtxIndexForClaim));
         this.nameString = result.nameString;
         this.initialized = true;
     }
-
-    private async validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
-        const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await rootTx.hash()).toString('hex');
-        let prefixMap = {};
-        prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
-        let nameAssetId = '';
-        let nameString = '';
-        let prevPotentialClaimNft = '';
-        let prevTx = rootTx;
-        for (let i = 1; i < rawtxs.length; i++) {  
-            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
-            const txId = (await tx.hash()).toString('hex');
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
-            // Enforce that each spend in the chain spends something from before
-            if (!prefixMap[prevOutpoint]) {
-                // Perhaps this is the claimNFT being spent?
-                if (prevPotentialClaimNft === prevOutpoint) {
-                    // Found a spend of a claim, return the position of the previous index then
-                    // Return because we have successfully resolved the prefix tree to the location of the claim NFT that was spent.
-                    return {
-                        rawtxIndexForClaim: i - 1,
-                        nameString,
-                        isClaimed: true,
-                    }
-                } else {
-                    throw new PrefixChainMismatchError();
-                }
-            } else {
-                // Do not concat the root node, skip it
-                if (i > 1) {
-                    const prevTxOut = prevTx.txOuts[outputIndex];
-                    const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
-                    nameString += letter; // Add the current letter that was spent
-                }
-            }
-            // Clear off the map to ensure a rawtx must spend something directly of it's parent
-            prefixMap = {};
-            prevPotentialClaimNft = txId + '00000000'; // Potential NFT is always at position 1
-            for (let o = 1; o < 38; o++) {  
-                const buf = Buffer.allocUnsafe(4);
-                buf.writeInt32LE(o);
-                const outNumString = buf.toString('hex');
-                prefixMap[txId + outNumString] = tx.txOuts[o];
-            }
-            prevTx = tx;
-        }
-        if (nameString === '') {
-            throw new ParameterListInsufficientSpendError();
-        }
-        return {
-            rawtxIndexForClaim: rawtxs.length - 1,
-            nameString,
-            isClaimed: false,
-        }
-    }
-
     private async validateBuildRecords(rawtxs: string[]) {
         const mintTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')

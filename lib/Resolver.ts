@@ -5,6 +5,9 @@ import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 import { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 import { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
 import { InvalidNameTransactionsError } from ".";
+import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
+import { TreeProcessor } from "./TreeProcessor";
+import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 
 const BNS_ROOT = '1495550c8f58cfe0b23c4f8205662eaf02978676a3a5eddc905feb23fb7024b7';
 const BNS_API_URL = 'https://resolver.based.org/api/v1';
@@ -40,9 +43,9 @@ export class Resolver implements ResolverInterface {
         await nameObject.init(this.nameTransactions[name], this.resolverConfig.root);
         // Ensure that the instantiated name matches what was requested by the resolver
         if (nameObject.getNameString() != name) {
-            this.verifyNeededTransactions(name, txFetch.rawtxs);
-            console.log('name string does not match');
-            throw new InvalidNameTransactionsError();
+            const treeProcessor: TreeProcessorInterface = new TreeProcessor();
+            const partialResult: RequiredTransactionPartialResult = await treeProcessor.getRequiredTransactionPartial(name, txFetch.rawtxs); 
+            console.log('partialResult', partialResult);
         }
         return nameObject;
     }
@@ -50,11 +53,7 @@ export class Resolver implements ResolverInterface {
     public getResolverConfig(): ResolverConfigInterface {
         return this.resolverConfig;
     }
-
-    private verifyNeededTransactions(name: string, rawtxs: string[]): boolean {
-        return true;
-    }
-
+    
     private async getNameTransactions(name: string): Promise<GetNameTransactionsResult> {
         if (this.resolverConfig.processGetNameTransactions) {
             return this.resolverConfig.processGetNameTransactions(name, this.resolverConfig);

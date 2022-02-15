@@ -1,3 +1,6 @@
+import * as bsv from 'bsv';
+import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
+
 export const sighashType2Hex = s => s.toString(16)
  
 export const prevOutpointFromTxIn = (txIn) => {
@@ -12,4 +15,8 @@ export const prevOutpointFromTxIn = (txIn) => {
         prevOutpoint: prevTxId + txOutNumberString
     };
 }
- 
+
+export const parseExtensionOutputData = (tx: bsv.Tx): ExtensionOutputData | null =>  {
+    console.log('tx', tx);
+    return null;
+};
