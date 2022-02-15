@@ -4,7 +4,7 @@ import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 import { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 import { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
-import { InvalidNameTransactionsError } from ".";
+import { InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
@@ -32,6 +32,9 @@ export class Resolver implements ResolverInterface {
     }
 
     public async getName(name: string): Promise<NameInterface> {
+        if (!name || !name.length) {
+            throw new ParameterMissingError();
+        }
         const txFetch = await this.getNameTransactions(name);
         if (txFetch.result === GetNameTransactionsResultEnum.FETCH_ERROR) {
             throw new GetNameTransactionsError();
@@ -41,11 +44,19 @@ export class Resolver implements ResolverInterface {
             testnet: this.resolverConfig.testnet,
         }, this.resolverConfig.bnsOutputRipemd160);
         await nameObject.init(this.nameTransactions[name], this.resolverConfig.root);
-        // Ensure that the instantiated name matches what was requested by the resolver
+        
+        // Ensure that the instantiated name at least partially includes what was requested by the resolver
+        if (!name.includes(nameObject.getNameString())) {
+            throw new InvalidNameTransactionsError();
+        }
+        // If it partially includes the transaction but it is not equal to the name...
+        // It means there are transactions missing (ex: need to potentially be created for that next letter(s) missing)
         if (nameObject.getNameString() != name) {
+            // Identify the point at which we need the next letter transaction
             const treeProcessor: TreeProcessorInterface = new TreeProcessor();
             const partialResult: RequiredTransactionPartialResult = await treeProcessor.getRequiredTransactionPartial(name, txFetch.rawtxs); 
-            console.log('partialResult', partialResult);
+            // We have the point at which the next letter transaction is required
+            throw new MissingNextTransactionError(partialResult);
         }
         return nameObject;
     }

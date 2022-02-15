@@ -3,5 +3,6 @@ import { ResolverConfigInterface } from "./ResolverConfig.interface";
 
 export interface ResolverInterface { 
     getName: (name: string) => Promise<NameInterface>;
+    //checkName: (name: string) => Promise<NameInterface>;
     getResolverConfig: () => ResolverConfigInterface;
 }

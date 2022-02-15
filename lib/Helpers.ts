@@ -16,7 +16,16 @@ export const prevOutpointFromTxIn = (txIn) => {
     };
 }
 
-export const parseExtensionOutputData = (tx: bsv.Tx): ExtensionOutputData | null =>  {
-    console.log('tx', tx);
-    return null;
+export const parseExtensionOutputData = (tx: bsv.Tx, outputIndex: number): ExtensionOutputData | null =>  {
+    const script = tx.txOuts[outputIndex].script;
+    const outputData: ExtensionOutputData = {
+        bnsConstant: script.chunks[0].buf.toString('utf8'),
+        issuerPkh: script.chunks[1].buf.toString('hex'),
+        claimHash: script.chunks[2].buf.toString('hex'),
+        dupHash: script.chunks[3].buf.toString('hex'),
+        currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
+        char: script.chunks[5].buf.toString('utf8'),
+        charHex: script.chunks[5].buf.toString('hex'),
+    };
+    return outputData;
 };

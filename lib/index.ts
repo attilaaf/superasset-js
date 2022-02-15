@@ -13,8 +13,16 @@ export { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 export { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
 export { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 export { InvalidNameTransactionsError } from "./errors/InvalidNameTransactionsError";
+export { MissingNextTransactionError } from "./errors/MissingNextTransactionError";
+export { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 export { NotInitError } from "./errors/NotInitError";
 export { NFTChainError } from "./errors/NFTChainError";
+export {
+  InvalidBnsConstantError,
+  InvalidCurrentDimensionError,
+  InvalidCharError,
+  InvalidDupHashError
+} from "./errors/OutputErrors";
 export { BitcoinAddress } from "./BitcoinAddress";
 export { GetNameTransactionsResult, GetNameTransactionsResultEnum  } from "./interfaces/GetNameTransactionsResult.interface";
 
