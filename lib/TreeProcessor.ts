@@ -7,7 +7,12 @@ import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
 import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage } from "scryptlib";
-import * as bnsjson from './bnsclaim_release_desc.json';
+import { bnsclaim } from "./bnsclaim_release_desc";
+import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
+
+function buildNFTPublicKeyHashOut(asset, pkh) {
+    return bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
+}
 
 /**
  * Process the transaction tree
@@ -76,6 +81,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         let nameString = '';
         let prevPotentialClaimNft = '';
         let prevTx = rootTx;
+        let prevOutput: ExtensionOutputData | null = null;
         // For each letter of the name
         const extensionData = parseExtensionOutputData(rootTx, 0);
         if (extensionData?.bnsConstant !== 'bns1') {
@@ -101,7 +107,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 // Do not concat the root node, skip it
                 if (i > 1) {
                     const prevTxOut = prevTx.txOuts[outputIndex];
-                    const prevOutput = parseExtensionOutputData(prevTx, outputIndex);
+                    prevOutput = parseExtensionOutputData(prevTx, outputIndex);
                     if (!prevOutput) {
                         console.log('Should not happen prevOutput is null');
                         throw new PrefixChainMismatchError();
@@ -131,7 +137,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             i = i + 1;
         }
         const nextMissingChar = name.charAt(i);
-        const requiredTx = this.buildRequiredTx(prevTx, nextMissingChar);
+        const requiredTx = this.buildRequiredTx(prevOutput, prevTx, nextMissingChar);
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
@@ -142,10 +148,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         };
     }
 
-    private buildRequiredTx(prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
-        // -----------------------------------------------------
-        // Step 1: Deploy with initial owner and satoshis value of 2650 (Lower than this may hit dust limit)
-        // Add the output letters 
+    private buildRequiredTx(prevOutput: ExtensionOutputData, prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
         const letters = [
             '2d',
             '5f',
@@ -189,21 +192,168 @@ export class TreeProcessor implements TreeProcessorInterface {
         ];
         const dividedSats = 800 * letters.length;
         const totalExtendOutputs = letters.length;
-    
         const FEE = 2000 + letters.length * 250;
         const INITIAL_FEE = 350;
-        console.log('FEE', FEE);
-    
         const dividedSatsResult = dividedSats / totalExtendOutputs;
         const dividedSatsResultnum2bin = num2bin(dividedSatsResult, 8);
-    
-        console.log('bnsjson', bnsjson);
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
-        const BNS = buildContractClass(bnsjson);
-        
+        const BNS = buildContractClass(bnsclaim());
         const tx = new bsv.Tx();
+        // const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
+        /*
+        // Do NOT provide a constructor as that will add unnecessary OP_0 OP_0 to the beginning of the contract
+        bytes bnsConstant;      // Assetid is the first push data
+        Ripemd160 issuerPkh;    // Issuer can transform or destroy the nodes
+        Ripemd160 claimNftHash;// Claim NFT pkh
+        int currentDimension;   // Current dimension
+        Ripemd160 dupHash;      // Dedup hash
+        bytes char;             // current char
+        */
+        const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
+        const issuerPkh = toHex(prevOutput.issuerPkh);
+        const claimHash = toHex(prevOutput.claimHash);
+        const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), prevOutput.issuerPkh);
+        const claimNftScript = claimNftScriptSCRIPT.toHex();
+        const claimSatoshisInt = 300;
+        // console.log('claimNftScript', claimNftScript, claimNftScript.length / 2);
+        const outputSize = '3f'; // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
+        console.log('claimNftScript', claimNftScript, claimNftScript.length / 2);
+        const claimSatoshisWithFullOutput = num2bin(claimSatoshisInt, 8) + outputSize + claimNftScript;
+        const claimNftHash = bsv.crypto.Hash.ripemd160(Buffer.from(claimSatoshisWithFullOutput, 'hex')).toString('hex');  
+       // console.log('claimNftHash', claimNftHash, claimPkh.length );
+        console.log('claimSatoshisWithFullOutput', claimSatoshisWithFullOutput);
+        // const claimNftHash = toHex(nftHash);
+        let prevDupHash = '0000000000000000000000000000000000000000';
+        let currentDimension = 20;
+        const tree = new BNS(
+          new Bytes(bnsConstant),
+          new Ripemd160(issuerPkh),
+          new Ripemd160(claimNftHash),
+          new Ripemd160(prevOutput.dupHash),
+          prevOutput.currentDimension + 1,
+          new Bytes('ff')
+        );
+        const Signature = bsv.crypto.Signature;
+        const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+        const asmVars = {
+            'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(),
+        };
+        tree.replaceAsmVars(asmVars);
+        const lockingScriptSize = tree.lockingScript.toHex().length / 2;
+        console.log('lockingScriptOriginal size', lockingScriptSize, tree.lockingScript.toASM(), tree.lockingScript.toHex());
+        const dividedSatoshisBytesWithSize = new Bytes(dividedSatsResultnum2bin + 'fd' + num2bin(tree.lockingScript.toHex().length / 2, 2)); // Change to length of script
+        console.log('bnsConstant', bnsConstant);
+        console.log('issuerPkh', issuerPkh);
+        console.log('claimNftHash', claimNftHash);
+        console.log('prevDupHash', prevDupHash);
+        console.log('currentDimension', currentDimension);
+        console.log('char', 'ff');
 
+        function getLockingScriptForCharacter(letter, dimensionCount, dupHash) {
+            const slicedPrefix = tree.lockingScript.toASM().substring(0, 90);
+            const slicedSuffix = tree.lockingScript.toASM().substring(138);
+            const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
+            return bsv.Script.fromASM(replaced);
+        }
+
+
+        // call contract method on testnet
+    const extendRootTx = new bsv.Transaction();
+
+    // Step 2.
+    // Spend the root 
+    console.log('About to extend root...')
+
+    await sleeper(5);
+    // Add funding input
+    //const utxo = await fetchUtxoLargeThan(privateKey.toAddress(), 300000);
+
+    extendRootTx.addInput(createInputFromPrevTx(deployTx))
+    .from(await fetchUtxos(privateKey.toAddress()))
+
+    // Create NFT claim output
+    extendRootTx.setOutput(0, (tx) => {
+      // const deployData = buildNFTPublicKeyHashOut(num2bin(0, 36), privateKey.toAddress().toHex().substring(2))
+      // Use the OP PUSH TX version of p2nftpkh
+      return new bsv.Transaction.Output({
+        script: bsv.Script.fromHex(claimNftScript),
+        satoshis: claimSatoshisInt,
+      })
+    })
+    currentDimension++;
+
+    const lockingScriptsLevel0 = {};
+    let dupHashesLevel0;
+
+    // For the initial spend we must combine the root outpoint as part of the dedup hash
+    const rootOutpoint = Buffer.from(deployTx.id, 'hex').reverse().toString('hex') + '00000000'; 
+    const combinedDupHash = prevDupHash + rootOutpoint + 'ff'; // The parent root node is 'ff' 
+    console.log('rootOutpoint', currentDimension, rootOutpoint, combinedDupHash);
+    const dupHash = bsv.crypto.Hash.ripemd160(Buffer.from(combinedDupHash, 'hex')).toString('hex');
+    console.log('dupHash', dupHash);
+    for (let i = 0; i < letters.length; i++) {
+      let letter = letters[i];
+      dupHashesLevel0 = dupHash;
+      const newLockingScript = getLockingScriptForCharacter(letter, currentDimension, dupHash);
+      lockingScriptsLevel0[letter] = newLockingScript;
+      const lockingScriptSizeNew = newLockingScript.toHex().length / 2;
+
+      if (i == 0) {
+        console.log('tree before', tree.lockingScript.toASM());
+        console.log('lockingScriptSizeNew size', lockingScriptSizeNew, newLockingScript.toASM(), newLockingScript.toHex(), num2bin(lockingScriptSizeNew, 2));
+      }
+
+      step2ExtendLockingScripts.push({
+        newLockingScript,
+        dupHash
+      });
+
+      extendRootTx.setOutput(i + 1, (tx) => {
+        return new bsv.Transaction.Output({
+          script: newLockingScript,
+          satoshis: dividedSatsResult,
+        })
+      })
+    }
+    extendRootTx.change(privateKey.toAddress());
+
+    extendRootTx.setInputScript(0, (tx, output) => {
+      const preimage = generatePreimage(true, tx, prevLockingScript, output.satoshis, sighashTypeBns);
+      const changeAddress = new Bytes(privateKey.toAddress().toHex().substring(2));
+      const changeSatoshis = num2bin(tx.getChangeAmount(), 8);
+      const issuerPubKey = new Bytes('0000');
+      // Signature is only needed for release
+      // const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeBns);
+      const issuerSig = new Bytes('0000');
+
+      console.log('bnsConstant', bnsConstant);
+      console.log('issuerPkh', issuerPkh);
+      console.log('claimNftHash', claimNftHash);
+      console.log('currentDimension', currentDimension);
+      console.log('prevDupHash', prevDupHash);
+      console.log('char', 'ff');
+      console.log('preimage', preimage);
+      console.log('dividedSatoshisBytesWithSize', dividedSatoshisBytesWithSize);
+      console.log('claimSatoshisWithFullOutput', claimSatoshisWithFullOutput);
+      console.log('changeAddress', changeAddress);
+      console.log('changeSatoshis', changeSatoshis);
+      console.log('isTransform', new Bool(false));
+      console.log('issuerSig', issuerSig);
+      console.log('issuerPubKey', issuerPubKey);
+      // Attach the claim NFT manually to extend
+      return tree.extend(
+        preimage,
+        dividedSatoshisBytesWithSize,
+        new Bytes(claimSatoshisWithFullOutput),
+        changeAddress,
+        new Bytes(changeSatoshis),
+        new Bool(false),
+        issuerSig,
+        issuerPubKey).toScript()
+    })
+
+    console.log('extendRootTx', extendRootTx);
         return null;
     }
 }
