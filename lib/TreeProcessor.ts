@@ -6,6 +6,9 @@ import { parseExtensionOutputData, prevOutpointFromTxIn } from "./Helpers";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
+import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage } from "scryptlib";
+import * as bnsjson from './bnsclaim_release_desc.json';
+
 /**
  * Process the transaction tree
  */
@@ -117,17 +120,19 @@ export class TreeProcessor implements TreeProcessorInterface {
             }
             prevTx = tx;
         }
+        let i = 0; // The position of the next letter to get
         if (nameString === '') {
             throw new ParameterListInsufficientSpendError();
-        } 
-        const i = name.indexOf(nameString);
-        if (i === -1) {
-            throw new ParameterMissingError();
+        }  else {
+            i = name.indexOf(nameString);
+            if (i === -1) {
+                throw new ParameterMissingError();
+            }
+            i = i + 1;
         }
-        const nextMissingChar = name.charAt(i + 1);
-        console.log('nextMissingChar', nextMissingChar);
-        const requiredTx = new bsv.Tx();
-
+        const nextMissingChar = name.charAt(i);
+        const requiredTx = this.buildRequiredTx(prevTx, nextMissingChar);
+        // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
             fulfilledName: nameString,
@@ -135,5 +140,70 @@ export class TreeProcessor implements TreeProcessorInterface {
             requiredTx,
             prevTx,
         };
+    }
+
+    private buildRequiredTx(prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
+        // -----------------------------------------------------
+        // Step 1: Deploy with initial owner and satoshis value of 2650 (Lower than this may hit dust limit)
+        // Add the output letters 
+        const letters = [
+            '2d',
+            '5f',
+            // '2e',
+            '30',
+            '31',
+            '32',
+            '33',
+            '34',
+            '35',
+            '36',
+            '37',
+            '38',
+            '39',
+            '61',
+            '62',
+            '63',
+            '64',
+            '65',
+            '66',
+            '67',
+            '68',
+            '69',
+            '6a',
+            '6b',
+            '6c',
+            '6d',
+            '6e',
+            '6f',
+            '70',
+            '71',
+            '72',
+            '73',
+            '74',
+            '75',
+            '76',
+            '77',
+            '78',
+            '79',
+            '7a'
+        ];
+        const dividedSats = 800 * letters.length;
+        const totalExtendOutputs = letters.length;
+    
+        const FEE = 2000 + letters.length * 250;
+        const INITIAL_FEE = 350;
+        console.log('FEE', FEE);
+    
+        const dividedSatsResult = dividedSats / totalExtendOutputs;
+        const dividedSatsResultnum2bin = num2bin(dividedSatsResult, 8);
+    
+        console.log('bnsjson', bnsjson);
+        // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
+        //const outputSize = 'fc'; // Change to fc for debug or f2 for release
+        const BNS = buildContractClass(bnsjson);
+        
+        const tx = new bsv.Tx();
+
+        return null;
     }
 }

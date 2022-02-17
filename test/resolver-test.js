@@ -174,7 +174,7 @@ describe('Resolver', () => {
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
          expect(!!partial.requiredTx).to.equal(true);
-         expect(partial.requiredTx.txOuts.length).to.equal(38);
+         expect(partial.requiredTx.txOuts.length).to.equal(39);
          return;
       }
       expect(false).to.be.true;

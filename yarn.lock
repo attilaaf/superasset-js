@@ -7192,10 +7192,10 @@ sax@~1.2.1:
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
   integrity sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==
 
-scryptlib@^0.10.4:
-  version "0.10.4"
-  resolved "https://registry.yarnpkg.com/scryptlib/-/scryptlib-0.10.4.tgz#dc2884a24ce28661126b32d88787ca499872878c"
-  integrity sha512-ciQcgw4bf9eYLIyYvhCFnuPTpfDRdTEhPagCXagzmPevSaU6LG6JwX6fNghRBZpxPr+415Iu5NNN2imapg4VAw==
+scryptlib@^0.12.4:
+  version "0.12.4"
+  resolved "https://registry.yarnpkg.com/scryptlib/-/scryptlib-0.12.4.tgz#6920bc55e06aa75ede914ca9a8eb1b8483401d75"
+  integrity sha512-CfojpvqKzS8eLSxoVT+2pl9EuZ0YeMel8Y4vP/SYur1qexXTUKxeY/O13gWOMux+ZDEYJFxy5UJzX1lgEgHyrw==
   dependencies:
     bsv "^1.5.6"
     compare-versions "^3.6.0"
