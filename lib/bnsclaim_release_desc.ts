@@ -1,4 +1,4 @@
-export function bnsclaim() {
+export function bnsclaim(): any {
     return {
         "version": 7,
         "compilerVersion": "1.7.0+commit.c3c53bb",
