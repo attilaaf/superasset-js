@@ -16,8 +16,9 @@ export const prevOutpointFromTxIn = (txIn) => {
     };
 }
 
-export const parseExtensionOutputData = (tx: bsv.Tx, outputIndex: number): ExtensionOutputData | null =>  {
+export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
     const script = tx.txOuts[outputIndex].script;
+    const txId = await tx.hash();
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('utf8'),
         issuerPkh: script.chunks[1].buf.toString('hex'),
@@ -26,6 +27,10 @@ export const parseExtensionOutputData = (tx: bsv.Tx, outputIndex: number): Exten
         currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
         char: script.chunks[5].buf.toString('utf8'),
         charHex: script.chunks[5].buf.toString('hex'),
+        txId, 
+        txIdBuf: txId.toString(),
+        script,
+        outputIndex
     };
     return outputData;
 };
