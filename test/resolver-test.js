@@ -172,19 +172,19 @@ describe('Resolver', () => {
          expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
-         expect(!!partial.requiredTx).to.equal(true);
+         expect(!!partial.requiredBnsTx).to.equal(true);
          const claimValueBn = new bsv.Bn(300);
-         expect(partial.requiredTx.txOuts[0].valueBn).to.eql(claimValueBn);
-         expect(partial.requiredTx.txOuts.length).to.equal(39);
-         for (let i = 1; i < partial.requiredTx.txOuts.length; i++) {
+         expect(partial.requiredBnsTx.getTx().txOuts[0].valueBn).to.eql(claimValueBn);
+         expect(partial.requiredBnsTx.getTx().txOuts.length).to.equal(39);
+         for (let i = 1; i < partial.requiredBnsTx.getTx().txOuts.length; i++) {
             const extValueBn = new bsv.Bn(800);
-            expect(partial.requiredTx.txOuts[i].valueBn).to.eql(extValueBn);
+            expect(partial.requiredBnsTx.getTx().txOuts[i].valueBn).to.eql(extValueBn);
          }
          return;
       }
       expect(false).to.be.true;
    });
-   it('#attachUnlockAndChangeOutput should succeed after #getName unsucessful due to incomplete', async () => {
+   it('#BnsTx methods should succeed after #getName unsucessful due to incomplete', async () => {
       const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const root = (await tx.hash()).toString('hex');
       const resolver = index.Resolver.create({
@@ -207,29 +207,39 @@ describe('Resolver', () => {
          expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
-         expect(!!partial.requiredTx).to.equal(true);
+         expect(!!partial.requiredBnsTx).to.equal(true);
          const claimValueBn = new bsv.Bn(300);
-         expect(partial.requiredTx.txOuts[0].valueBn).to.eql(claimValueBn);
-         expect(partial.requiredTx.txOuts.length).to.equal(39);
-         for (let i = 1; i < partial.requiredTx.txOuts.length; i++) {
+         expect(partial.requiredBnsTx.getTx().txOuts[0].valueBn).to.eql(claimValueBn);
+         expect(partial.requiredBnsTx.getTx().txOuts.length).to.equal(39);
+         for (let i = 1; i < partial.requiredBnsTx.getTx().txOuts.length; i++) {
             const extValueBn = new bsv.Bn(800);
-            expect(partial.requiredTx.txOuts[i].valueBn).to.eql(extValueBn);
+            expect(partial.requiredBnsTx.getTx().txOuts[i].valueBn).to.eql(extValueBn);
          }
-         console.log('partial', partial);
- 
+         const outputSats = 300 + 800 * 38;
+         expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
+         const bitcoinAddress = BitcoinAddress.fromString('18FnwHbZz5wwCxJ4h2sQsAMYd7qyHryJUX');
+         const miningFee = 1000; // Guess
+         const utxo = {
+         };
+         partial.requiredBnsTx.addFundingInput(utxo);
+         partial.requiredBnsTx.setChangeOutput(bitcoinAddress.toP2PKH(), inputSats - outputSats - miningFee);
+         // public addFundingInput(txId: string, outputIndex: number, unlockScript: string): BnsTxInterface {
+         // partial.requiredBnsTx.addFundingInput();
+
+         //  console.log('partial', partial);
          // Attach the change output
          // Generate and attach the unlocking script at same time since it is required for the preimage generation
-         const valueBn = new bsv.Bn(bnsContractConfig.claimOutputSatoshisInt);
-         const script = new bsv.Script().fromHex(bnsContractConfig.claimOutput);
-         const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
-         const txOut = new bsv.TxOut().fromObject({
-               valueBn: valueBn,
-               scriptVi: scriptVi,
-               script: script
-         });
-         tx.addTxOut(txOut);
-         index.TreeProcessor.attachUnlockAndChangeOutput(partial.prevOutput, partial.bnsContractConfig, tx, txOut);
-
+         /* const valueBn = new bsv.Bn(partial.bnsContractConfig.claimOutputSatoshisInt);
+            const script = new bsv.Script().fromHex(partial.bnsContractConfig.claimOutput);
+            const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
+            const txOut = new bsv.TxOut().fromObject({
+                  valueBn: valueBn,
+                  scriptVi: scriptVi,
+                  script: script
+            });
+            tx.addTxOut(txOut);
+         */
+         // index.TreeProcessor.attachUnlockAndChangeOutput(partial.prevOutput, partial.bnsContractConfig, tx, txOut);
          return;
       }
       expect(false).to.be.true;

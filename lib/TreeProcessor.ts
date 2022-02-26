@@ -10,6 +10,8 @@ import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes,
 import { bnsclaim } from "./bnsclaim_release_desc";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
 import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
+import { BnsTx } from "./BnsTx";
+import { BnsTxInterface } from "./interfaces/BnsTx.interface";
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
     const script = bsv.Script.fromAsmString(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
@@ -196,7 +198,7 @@ export class TreeProcessor implements TreeProcessorInterface {
 
         const nextMissingChar = name.charAt(i);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        const requiredTx = this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar);
+        const requiredBnsTx: BnsTxInterface = new BnsTx(this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
@@ -204,7 +206,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             bnsContractConfig,
             fulfilledName: nameString,
             nextMissingChar,
-            requiredTx,
+            requiredBnsTx,
             prevTx,
         };
     }
@@ -281,7 +283,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         return tx;
     }
 
-    public attachUnlockAndChangeOutput(prevOutput: ExtensionOutputData, tx: bsv.Tx, txOut: bsv.TxOut): bsv.Tx {
+    static attachUnlockAndChangeOutput(prevOutput: ExtensionOutputData, tx: bsv.Tx, txOut: bsv.TxOut): bsv.Tx {
        /* const preimage = generatePreimage(true, tx, prevOutput.script, prevOutput.satoshis, sighashTypeBns);
         // const changeAddress = new Bytes(privateKey.toAddress().toHex().substring(2));
          //const changeSatoshis = num2bin(tx.getChangeAmount(), 8);

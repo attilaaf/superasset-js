@@ -5,6 +5,10 @@ export class BitcoinAddress {
     toString(): string {
         return this.address.toString();
     }
+    toP2PKH(): string {
+        // Todo
+        return this.address.toString();
+    }
     toBuf(): Buffer {
         return this.address.toBuffer();
     }

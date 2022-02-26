@@ -25,7 +25,7 @@ export {
   InvalidDupHashError
 } from "./errors/OutputErrors";
 export { BitcoinAddress } from "./BitcoinAddress";
-export { GetNameTransactionsResult, GetNameTransactionsResultEnum  } from "./interfaces/GetNameTransactionsResult.interface";
+export { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
 
 const defaultOptions: any = {
   api: 'https://api.mattercloud.io/api/v3/main/address/ADDRESS_STR/utxo', // Use ADDRESS_STR as replacement
@@ -43,7 +43,6 @@ export class BNS implements BNSInterface {
   public async getName(name: string): Promise<NameInterface> {
     return this.resolver().getName(name);
   }
-
 }
 
 export function instance(): BNSInterface {

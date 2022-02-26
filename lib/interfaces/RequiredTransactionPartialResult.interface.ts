@@ -1,5 +1,6 @@
 import * as bsv from 'bsv';
 import { BnsContractConfig } from './BnsContractConfig.interface';
+import { BnsTxInterface } from './BnsTx.interface';
 import { ExtensionOutputData } from './ExtensionOutputData.interface';
 export interface RequiredTransactionPartialResult {   
     success: boolean; 
@@ -7,6 +8,6 @@ export interface RequiredTransactionPartialResult {
     bnsContractConfig: BnsContractConfig;
     fulfilledName: string;
     nextMissingChar: string;
-    requiredTx: bsv.Tx;
+    requiredBnsTx: BnsTxInterface;
     prevTx: bsv.Tx;
 }
