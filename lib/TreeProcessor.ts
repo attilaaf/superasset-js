@@ -198,7 +198,7 @@ export class TreeProcessor implements TreeProcessorInterface {
 
         const nextMissingChar = name.charAt(i);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        const requiredBnsTx: BnsTxInterface = new BnsTx(this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
+        const requiredBnsTx: BnsTxInterface = new BnsTx(prevOutput, this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,

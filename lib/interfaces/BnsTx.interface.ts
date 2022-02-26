@@ -6,7 +6,7 @@ export interface BnsTxInterface {
     // Sets change to the script (replaces multiple calls with latest)
     setChangeOutput: (changeScript: string, changeSatoshis: number) => BnsTxInterface;
     // Adds funding input to the script
-    addFundingInput: (utxo: { txId: string, outputIndex: number, unlockScript: string, satoshis: number }) => BnsTxInterface;
+    setFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
     // Get the underlying tx
     getTx: () => bsv.Tx;
     // Get the required fee

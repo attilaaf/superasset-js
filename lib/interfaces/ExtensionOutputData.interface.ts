@@ -12,5 +12,6 @@ export interface ExtensionOutputData {
     currentDimension: number;
     char: string;
     charHex: string;
-    script: bsv.Script
+    script: bsv.Script;
+    satoshis: number;
 }

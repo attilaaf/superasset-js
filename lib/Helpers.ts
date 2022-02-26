@@ -20,6 +20,7 @@ export const intToLE = (i) => {
 
 export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
     const script = tx.txOuts[outputIndex].script;
+    const satoshis = parseInt(tx.txOuts[outputIndex].valueBn.toString());
     const txId = await tx.hash();
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('utf8'),
@@ -33,7 +34,8 @@ export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number):
         txId: txId.toString(),
         txIdBuf: txId,
         script,
-        outputIndex
+        outputIndex,
+        satoshis,
     };
     return outputData;
 };
