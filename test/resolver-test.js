@@ -184,5 +184,54 @@ describe('Resolver', () => {
       }
       expect(false).to.be.true;
    });
+   it('#attachUnlockAndChangeOutput should succeed after #getName unsucessful due to incomplete', async () => {
+      const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
+      const root = (await tx.hash()).toString('hex');
+      const resolver = index.Resolver.create({
+         processGetNameTransactions: function(name, cfg) {
+            return {
+               result: 'success',
+               rawtxs: [
+                  baRoot, baRootExtend, baRootExtendB
+               ]
+            };
+         },
+         root
+      });
+      try {
+         await resolver.getName('ba')
+      } catch (err){
+         expect(err instanceof index.MissingNextTransactionError).to.be.true;
+         // Verify that the next transaction will be for the 'A' after the 'B'
+         const partial = err.requiredTransactionPartialResult;
+         expect(partial.success).to.be.false;
+         expect(partial.fulfilledName).to.equal('b');
+         expect(partial.nextMissingChar).to.equal('a');
+         expect(!!partial.requiredTx).to.equal(true);
+         const claimValueBn = new bsv.Bn(300);
+         expect(partial.requiredTx.txOuts[0].valueBn).to.eql(claimValueBn);
+         expect(partial.requiredTx.txOuts.length).to.equal(39);
+         for (let i = 1; i < partial.requiredTx.txOuts.length; i++) {
+            const extValueBn = new bsv.Bn(800);
+            expect(partial.requiredTx.txOuts[i].valueBn).to.eql(extValueBn);
+         }
+         console.log('partial', partial);
  
+         // Attach the change output
+         // Generate and attach the unlocking script at same time since it is required for the preimage generation
+         const valueBn = new bsv.Bn(bnsContractConfig.claimOutputSatoshisInt);
+         const script = new bsv.Script().fromHex(bnsContractConfig.claimOutput);
+         const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
+         const txOut = new bsv.TxOut().fromObject({
+               valueBn: valueBn,
+               scriptVi: scriptVi,
+               script: script
+         });
+         tx.addTxOut(txOut);
+         index.TreeProcessor.attachUnlockAndChangeOutput(partial.prevOutput, partial.bnsContractConfig, tx, txOut);
+
+         return;
+      }
+      expect(false).to.be.true;
+   });
 });

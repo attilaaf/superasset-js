@@ -5,6 +5,7 @@ import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 export { Name } from "./Name";
 export { Resolver } from "./Resolver";
+export { TreeProcessor } from "./TreeProcessor";
 export { ParameterMissingError } from "./errors/ParameterMissingError";
 export { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 export { ParameterExpectedRootEmptyError } from "./errors/ParameterExpectedRootEmptyError";
