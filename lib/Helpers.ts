@@ -6,14 +6,16 @@ export const sighashType2Hex = s => s.toString(16)
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.txHashBuf.toString('hex');
     const outputIndex = txIn.txOutNum;
-    const buf = Buffer.allocUnsafe(4);
-    buf.writeInt32LE(outputIndex);
-    const txOutNumberString = buf.toString('hex');
     return {
         outputIndex,
         prevTxId,
-        prevOutpoint: prevTxId + txOutNumberString
+        prevOutpoint: prevTxId + intToLE(outputIndex)
     };
+}
+export const intToLE = (i) => {
+    const buf = Buffer.allocUnsafe(4);
+    buf.writeInt32LE(i);
+    return buf.toString('hex');
 }
 
 export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
@@ -27,8 +29,9 @@ export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number):
         currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
         char: script.chunks[5].buf.toString('utf8'),
         charHex: script.chunks[5].buf.toString('hex'),
-        txId, 
-        txIdBuf: txId.toString(),
+        outpointHex: txId.toString() + intToLE(outputIndex),
+        txId: txId.toString(),
+        txIdBuf: txId,
         script,
         outputIndex
     };

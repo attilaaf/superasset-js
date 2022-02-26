@@ -169,14 +169,20 @@ describe('Resolver', () => {
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
-         console.log('err', err.requiredTransactionPartialResult);
          expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
          expect(!!partial.requiredTx).to.equal(true);
+         const claimValueBn = new bsv.Bn(300);
+         expect(partial.requiredTx.txOuts[0].valueBn).to.eql(claimValueBn);
          expect(partial.requiredTx.txOuts.length).to.equal(39);
+         for (let i = 1; i < partial.requiredTx.txOuts.length; i++) {
+            const extValueBn = new bsv.Bn(800);
+            expect(partial.requiredTx.txOuts[i].valueBn).to.eql(extValueBn);
+         }
          return;
       }
       expect(false).to.be.true;
    });
+ 
 });
