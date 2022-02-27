@@ -26,9 +26,6 @@ function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, 
 
 const Signature = bsv.Sig;
 const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
-const asmVars = {
-    'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
-};
 const letters = [
     '2d',
     '5f',
@@ -198,7 +195,7 @@ export class TreeProcessor implements TreeProcessorInterface {
 
         const nextMissingChar = name.charAt(i);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        const requiredBnsTx: BnsTxInterface = new BnsTx(prevOutput, this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
+        const requiredBnsTx: BnsTxInterface = new BnsTx(bnsContractConfig, prevOutput, this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
@@ -282,41 +279,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
         return tx;
     }
-
-    static attachUnlockAndChangeOutput(prevOutput: ExtensionOutputData, tx: bsv.Tx, txOut: bsv.TxOut): bsv.Tx {
-       /* const preimage = generatePreimage(true, tx, prevOutput.script, prevOutput.satoshis, sighashTypeBns);
-        // const changeAddress = new Bytes(privateKey.toAddress().toHex().substring(2));
-         //const changeSatoshis = num2bin(tx.getChangeAmount(), 8);
-         const issuerPubKey = new Bytes('0000');
-         // Signature is only needed for release
-         // const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeBns);
-         const issuerSig = new Bytes('0000');
-         // Attach the claim NFT manually to extend
-       //  console.log('bnsContractConfig.claimOutput should be full output: ', bnsContractConfig.claimOutput)
-         const scriptUnlock = scryptBns.extend(
-             preimage,
-             bnsContractConfig.letterOutputSatoshisHex + SIZE_NEEDED_HERE?,
-             new Bytes(bnsContractConfig.claimOutput), // Todo: check if this is the full output
-             changeAddress,
-             new Bytes(changeSatoshis),
-             new Bool(false),
-             issuerSig,
-             issuerPubKey).toScript()
-         });
  
-         const txIn = new bsv.TxIn().fromProperties(
-             prevOutput.txIdBuf, // Todo maybe it is reversed
-             prevOutput.outputIndex,
-             scriptUnlock
-         );
-         const tx = new bsv.Tx();
- 
- 
-            
-         tx.addTxIn(txIn)*/
-        return tx;
-    }
-
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
         // Add Extension Letter Outputs
         const scryptBns = new bnsContractConfig.BNS(
@@ -327,6 +290,9 @@ export class TreeProcessor implements TreeProcessorInterface {
             prevOutput.currentDimension + 1,
             new Bytes(bnsContractConfig.rootCharHex)
         );
+        const asmVars = {
+            'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
+        };
         scryptBns.replaceAsmVars(asmVars);
         let tx: bsv.Tx = new bsv.Tx();
         tx = this.addClaimOutput(bnsContractConfig, tx);

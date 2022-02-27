@@ -217,6 +217,7 @@ describe('Resolver', () => {
          }
          const outputSats = 300 + 800 * 38;
          expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
+         
          const bitcoinAddress = index.BitcoinAddress.fromString('18FnwHbZz5wwCxJ4h2sQsAMYd7qyHryJUX');
          const miningFee = 1000; // Guess
          const utxo = {
@@ -225,12 +226,15 @@ describe('Resolver', () => {
             satoshis: 50000,
             script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
          };
-         partial.requiredBnsTx.setFundingInput(utxo);
          const changeP2PKH = bitcoinAddress.toP2PKH();
          const totalInputSatoshis = partial.prevOutput.satoshis + utxo.satoshis;
-         console.log('totalInputSatoshis', totalInputSatoshis);
-         partial.requiredBnsTx.setChangeOutput(changeP2PKH, totalInputSatoshis - outputSats - miningFee);
-         
+         const updatedTx = partial.requiredBnsTx.setChangeOutput(changeP2PKH, totalInputSatoshis - outputSats - miningFee);
+         console.log('updatedTx', updatedTx);
+         console.log('partial.requiredBnsTx', partial.requiredBnsTx);
+
+         const unlockScript = '<sig> <pubkey>';
+         partial.requiredBnsTx.setFundingInput(utxo, unlockScript);
+
          expect(partial.requiredBnsTx.getFee()).to.eql(miningFee);
          expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5);
          // public addFundingInput(txId: string, outputIndex: number, unlockScript: string): BnsTxInterface {
