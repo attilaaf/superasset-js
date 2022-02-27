@@ -7,6 +7,7 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 
 const MSB_THRESHOLD = 0x7e;
 const sighashTypeBns = bsv2.Sig.SIGHASH_ANYONECANPAY | bsv2.Sig.SIGHASH_ALL | bsv2.Sig.SIGHASH_FORKID;
+const MINING_FEE = 1000;
 
 export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
@@ -22,7 +23,7 @@ export class BnsTx implements BnsTxInterface {
                 const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
                 let preimageHex = toHex(preimage_);
                 preimage = preimage_;
-                const h = bsv2.Hash.sha256sha256(Buffer.from(preimageHex, 'hex'));
+                const h = bsv2.Hash.sha256Sha256(Buffer.from(preimageHex, 'hex'));
                 const msb = h.readUInt8();
                 if (msb < MSB_THRESHOLD) {
                     // the resulting MSB of sighash must be less than the threshold
@@ -35,13 +36,28 @@ export class BnsTx implements BnsTxInterface {
         return preimage;
     }
 
-    public setChangeOutput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
-        const txLegacy: bsv.Transaction = new bsv.Transaction(this.tx.toHex());
+    public setChangeOutput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
+        const valueBn = new bsv2.Bn(this.getChangeSatoshisExpected());
+        const script = bsv2.Script.fromAsmString(bitcoinAddress.toP2PKH());
+        console.log('script aa ', script);
+        console.log('script toBuffer ', script.toBuffer());
+        const scriptVi = bsv2.VarInt.fromNumber(script.toBuffer().length);
+        const txOut = new bsv2.TxOut().fromObject({
+            valueBn: valueBn,
+            scriptVi: scriptVi,
+            script: script
+        });
+        console.log('aaa to txout', txOut);
+        this.tx.addTxOut(txOut);
+        return this;
+    }
 
-        
+    
+    public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
+        const txLegacy: bsv.Transaction = new bsv.Transaction(this.tx.toHex());
         const preimage = BnsTx.generatePreimage(true, txLegacy, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
         const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
-        const changeSatoshisBytes = num2bin(changeSatoshis, 8);
+        const changeSatoshisBytes = num2bin(this.getChangeSatoshisExpected(), 8);
         const issuerPubKey = new Bytes('0000');
         // Signature is only needed for release
         // const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeBns);
@@ -58,9 +74,11 @@ export class BnsTx implements BnsTxInterface {
             'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
         };
         scryptBns.replaceAsmVars(asmVars);
+        const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(scryptBns.lockingScript.toHex().length / 2, 2);
+       
         const scriptUnlock = scryptBns.extend(
             preimage,
-            this.bnsContractConfig.letterOutputSatoshisHex, // Todo: is size needed here?
+            dividedSatoshisBytesWithSize, // Todo: is size needed here?
             new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
             changeAddress,
             new Bytes(changeSatoshisBytes),
@@ -76,15 +94,20 @@ export class BnsTx implements BnsTxInterface {
         return this;
     }
 
-    public setFundingInput(utxo: { txid: string, outputIndex: number, script: string, satoshis: number }, unlockScript: string): BnsTxInterface {
+    public setFundingInput(utxo: { txid: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
         this.fundingInput = utxo;
         const txIn = new bsv2.TxIn().fromProperties(
             this.prevOutput.txIdBuf,
             this.prevOutput.outputIndex,
-            unlockScript
+            new bsv2.Script()
         );
         this.tx.addTxIn(txIn);
         return this;
+    }
+
+    private getChangeSatoshisExpected(): number {
+        const totalInputSatoshis = this.prevOutput.satoshis + this.fundingInput.satoshis;
+        return totalInputSatoshis - this.getTotalSatoshisExcludingChange() - MINING_FEE;
     }
 
     public getTx(): bsv2.Tx {

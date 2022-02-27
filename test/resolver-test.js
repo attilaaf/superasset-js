@@ -219,41 +219,25 @@ describe('Resolver', () => {
          expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
          
          const bitcoinAddress = index.BitcoinAddress.fromString('18FnwHbZz5wwCxJ4h2sQsAMYd7qyHryJUX');
-         const miningFee = 1000; // Guess
+         const miningFee = 1000; 
          const utxo = {
             txid: '5e3014372338f079f005eedc85359e4d96b8440e7dbeb8c35c4182e0c19a1a12',
             outputIndex: 0,
             satoshis: 50000,
             script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
          };
-         const changeP2PKH = bitcoinAddress.toP2PKH();
-         const totalInputSatoshis = partial.prevOutput.satoshis + utxo.satoshis;
-         const updatedTx = partial.requiredBnsTx.setChangeOutput(changeP2PKH, totalInputSatoshis - outputSats - miningFee);
-         console.log('updatedTx', updatedTx);
+         partial.requiredBnsTx.setFundingInput(utxo);
+         partial.requiredBnsTx.setChangeOutput(bitcoinAddress);
          console.log('partial.requiredBnsTx', partial.requiredBnsTx);
 
-         const unlockScript = '<sig> <pubkey>';
-         partial.requiredBnsTx.setFundingInput(utxo, unlockScript);
+         partial.requiredBnsTx.unlockBnsInput(bitcoinAddress);
+         partial.requiredBnsTx.unlockFundingInput(keyPair);
 
          expect(partial.requiredBnsTx.getFee()).to.eql(miningFee);
          expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5);
-         // public addFundingInput(txId: string, outputIndex: number, unlockScript: string): BnsTxInterface {
-         // partial.requiredBnsTx.addFundingInput();
 
-         //  console.log('partial', partial);
-         // Attach the change output
-         // Generate and attach the unlocking script at same time since it is required for the preimage generation
-         /* const valueBn = new bsv.Bn(partial.bnsContractConfig.claimOutputSatoshisInt);
-            const script = new bsv.Script().fromHex(partial.bnsContractConfig.claimOutput);
-            const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
-            const txOut = new bsv.TxOut().fromObject({
-                  valueBn: valueBn,
-                  scriptVi: scriptVi,
-                  script: script
-            });
-            tx.addTxOut(txOut);
-         */
-         // index.TreeProcessor.attachUnlockAndChangeOutput(partial.prevOutput, partial.bnsContractConfig, tx, txOut);
+         
+
          return;
       }
       expect(false).to.be.true;

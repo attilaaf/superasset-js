@@ -6,6 +6,5 @@ export interface BnsContractConfig {
     claimOutputSatoshisInt: number;
     claimOutputSatoshisHex: string;
     letterOutputSatoshisInt: number;
-    letterOutputSatoshisHex: string;
     rootCharHex: string;
 }

@@ -210,7 +210,6 @@ export class TreeProcessor implements TreeProcessorInterface {
 
     private getBnsContractConfig(issuerPkh: string): BnsContractConfig {
         const letterOutputSatoshisInt = 800;
-        const letterOutputSatoshisHex = num2bin(letterOutputSatoshisInt, 8);
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
         const BNS = buildContractClass(bnsclaim());
@@ -231,7 +230,6 @@ export class TreeProcessor implements TreeProcessorInterface {
             claimOutputSatoshisInt,
             claimOutputSatoshisHex,
             letterOutputSatoshisInt,
-            letterOutputSatoshisHex,
             rootCharHex: 'ff',
         }
     }
