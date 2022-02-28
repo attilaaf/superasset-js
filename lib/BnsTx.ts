@@ -35,8 +35,8 @@ export class BnsTx implements BnsTxInterface {
         return preimage;
     }
 
-    public setChangeOutput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
-        const valueBn = new bsv2.Bn(this.getChangeSatoshisExpected());
+    public setChangeOutput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
+        const valueBn = new bsv2.Bn(changeSatoshis);
         const script = bsv2.Script.fromAsmString(bitcoinAddress.toP2PKH());
         const scriptVi = bsv2.VarInt.fromNumber(script.toBuffer().length);
         const txOut = new bsv2.TxOut().fromObject({
@@ -48,11 +48,12 @@ export class BnsTx implements BnsTxInterface {
         return this;
     }
     
-    public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
+    public unlockBnsInput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
+        console.log('unlockBnsInput', this.tx);
         const txLegacy: bsv.Transaction = new bsv.Transaction(this.tx.toHex());
         const preimage = BnsTx.generatePreimage(true, txLegacy, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
         const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
-        const changeSatoshisBytes = num2bin(this.getChangeSatoshisExpected(), 8);
+        const changeSatoshisBytes = num2bin(changeSatoshis, 8);
         const issuerPubKey = new Bytes('0000');
         const issuerSig = new Bytes('0000');
         const scryptBns = new this.bnsContractConfig.BNS(
@@ -77,6 +78,7 @@ export class BnsTx implements BnsTxInterface {
             new Bool(false),
             issuerSig,
             issuerPubKey).toScript();
+
         const txIn = new bsv2.TxIn().fromProperties(
             this.prevOutput.txIdBuf,  
             this.prevOutput.outputIndex,
@@ -86,11 +88,11 @@ export class BnsTx implements BnsTxInterface {
         return this;
     }
 
-    public unlockFundingInput(privateKey: any) {
+    public unlockFundingInput(keyPair: bsv.KeyPair) {
         // Produce a signature and get the public key
-        const sig = '';
+        const sig = this.tx.sign(keyPair, bsv2.Sig.SIGHASH_ALL, 1, new bsv.Script())
         const pubKey = '';
-
+        console.log('sig', sig);
         const txIn = new bsv2.TxIn().fromProperties(
             Buffer.from(this.fundingInput.txid, 'hex'),
             this.fundingInput.outputIndex,
@@ -109,11 +111,6 @@ export class BnsTx implements BnsTxInterface {
         );
         this.tx.addTxIn(txIn);
         return this;
-    }
-
-    private getChangeSatoshisExpected(): number {
-        const totalInputSatoshis = this.prevOutput.satoshis + this.fundingInput.satoshis;
-        return totalInputSatoshis - this.getTotalSatoshisExcludingChange() - this.bnsContractConfig.miningFee;
     }
 
     public getTx(): bsv2.Tx {

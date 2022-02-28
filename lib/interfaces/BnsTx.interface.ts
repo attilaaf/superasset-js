@@ -4,9 +4,9 @@ import * as bsv from 'bsv';
 
 export interface BnsTxInterface { 
     // Sets change to the script (replaces multiple calls with latest)
-    setChangeOutput: (bitcoinAddress: BitcoinAddress) => BnsTxInterface;
+    setChangeOutput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
     // Unlock the Bns input
-    unlockBnsInput: (bitcoinAddress: BitcoinAddress) => BnsTxInterface;
+    unlockBnsInput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
     // Adds funding input to the script
     setFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }, unlockScript: string) => BnsTxInterface;
     // unlock the funding input

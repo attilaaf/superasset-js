@@ -229,24 +229,32 @@ describe('Resolver', () => {
             script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
          };
 
+         const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
+         partial.requiredBnsTx.setChangeOutput(bitcoinAddress, changeSatoshis);
+         partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
          partial.requiredBnsTx.setFundingInput(utxo);
-         partial.requiredBnsTx.setChangeOutput(bitcoinAddress);
-         console.log('partial.requiredBnsTx', partial.requiredBnsTx);
-
-         partial.requiredBnsTx.unlockBnsInput(bitcoinAddress);
 
          const key = 'cPiAuukeNemjVCx76Vf6Fn5oUn7z9dPCvgY3b3H9m5hKCfE4BWvS'
          const privKey = new bsv.PrivKey.Testnet();
          privKey.fromWif(key);
 
-         console.log('partial.requiredBnsTx updated', privKey);
-         partial.requiredBnsTx.unlockFundingInput(privKey);
+         const pubKey = bsv.PubKey.fromPrivKey(privKey)
+         console.log('pubKey', pubKey);
+         const keyPair = new bsv.KeyPair.Testnet().fromJSON({
+            privKey: privKey.toJSON(),
+            pubKey: pubKey.toJSON()
+         });
+
+         console.log('partial.requiredBnsTx updated', keyPair);
+         partial.requiredBnsTx.unlockFundingInput(keyPair);
 
          expect(partial.requiredBnsTx.getFeeRate() >= 0.5 && partial.requiredBnsTx.getFeeRate() <= 0.51).to.eql(true);
          expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5018723699957534);
          expect(partial.requiredBnsTx.getFee()).to.eql(13000);
 
-         
+         console.log('tx generated', partial.requiredBnsTx.getTx().toString());
+         console.log('tx generated json', partial.requiredBnsTx.getTx());
+
          return;
       }
       expect(false).to.be.true;
