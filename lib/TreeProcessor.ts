@@ -224,6 +224,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimOutputHash160 = bsv.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
         return {///Hash.sha256Ripemd160
             BNS,
+            miningFee: 13000,
             bnsConstant,
             claimOutputHash160,
             claimOutput,

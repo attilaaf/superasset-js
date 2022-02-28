@@ -9,6 +9,8 @@ export interface BnsTxInterface {
     unlockBnsInput: (bitcoinAddress: BitcoinAddress) => BnsTxInterface;
     // Adds funding input to the script
     setFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }, unlockScript: string) => BnsTxInterface;
+    // unlock the funding input
+    unlockFundingInput: (privateKey: any) => void;
     // Get the underlying tx
     getTx: () => bsv.Tx;
     // Get the required fee

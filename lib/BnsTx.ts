@@ -7,7 +7,6 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 
 const MSB_THRESHOLD = 0x7e;
 const sighashTypeBns = bsv2.Sig.SIGHASH_ANYONECANPAY | bsv2.Sig.SIGHASH_ALL | bsv2.Sig.SIGHASH_FORKID;
-const MINING_FEE = 1000;
 
 export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
@@ -39,19 +38,15 @@ export class BnsTx implements BnsTxInterface {
     public setChangeOutput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
         const valueBn = new bsv2.Bn(this.getChangeSatoshisExpected());
         const script = bsv2.Script.fromAsmString(bitcoinAddress.toP2PKH());
-        console.log('script aa ', script);
-        console.log('script toBuffer ', script.toBuffer());
         const scriptVi = bsv2.VarInt.fromNumber(script.toBuffer().length);
         const txOut = new bsv2.TxOut().fromObject({
             valueBn: valueBn,
             scriptVi: scriptVi,
             script: script
         });
-        console.log('aaa to txout', txOut);
         this.tx.addTxOut(txOut);
         return this;
     }
-
     
     public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
         const txLegacy: bsv.Transaction = new bsv.Transaction(this.tx.toHex());
@@ -59,8 +54,6 @@ export class BnsTx implements BnsTxInterface {
         const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
         const changeSatoshisBytes = num2bin(this.getChangeSatoshisExpected(), 8);
         const issuerPubKey = new Bytes('0000');
-        // Signature is only needed for release
-        // const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeBns);
         const issuerSig = new Bytes('0000');
         const scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.bnsContractConfig.bnsConstant),
@@ -75,10 +68,9 @@ export class BnsTx implements BnsTxInterface {
         };
         scryptBns.replaceAsmVars(asmVars);
         const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(scryptBns.lockingScript.toHex().length / 2, 2);
-       
         const scriptUnlock = scryptBns.extend(
             preimage,
-            dividedSatoshisBytesWithSize, // Todo: is size needed here?
+            new Bytes(dividedSatoshisBytesWithSize), // Todo: is size needed here?
             new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
             changeAddress,
             new Bytes(changeSatoshisBytes),
@@ -86,9 +78,23 @@ export class BnsTx implements BnsTxInterface {
             issuerSig,
             issuerPubKey).toScript();
         const txIn = new bsv2.TxIn().fromProperties(
-            this.prevOutput.txIdBuf, // Todo maybe it is reversed
+            this.prevOutput.txIdBuf,  
             this.prevOutput.outputIndex,
             scriptUnlock
+        );
+        this.tx.addTxIn(txIn);
+        return this;
+    }
+
+    public unlockFundingInput(privateKey: any) {
+        // Produce a signature and get the public key
+        const sig = '';
+        const pubKey = '';
+
+        const txIn = new bsv2.TxIn().fromProperties(
+            Buffer.from(this.fundingInput.txid, 'hex'),
+            this.fundingInput.outputIndex,
+            new bsv2.Script()
         );
         this.tx.addTxIn(txIn);
         return this;
@@ -97,8 +103,8 @@ export class BnsTx implements BnsTxInterface {
     public setFundingInput(utxo: { txid: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
         this.fundingInput = utxo;
         const txIn = new bsv2.TxIn().fromProperties(
-            this.prevOutput.txIdBuf,
-            this.prevOutput.outputIndex,
+            Buffer.from(this.fundingInput.txid, 'hex'),
+            this.fundingInput.outputIndex,
             new bsv2.Script()
         );
         this.tx.addTxIn(txIn);
@@ -107,7 +113,7 @@ export class BnsTx implements BnsTxInterface {
 
     private getChangeSatoshisExpected(): number {
         const totalInputSatoshis = this.prevOutput.satoshis + this.fundingInput.satoshis;
-        return totalInputSatoshis - this.getTotalSatoshisExcludingChange() - MINING_FEE;
+        return totalInputSatoshis - this.getTotalSatoshisExcludingChange() - this.bnsContractConfig.miningFee;
     }
 
     public getTx(): bsv2.Tx {

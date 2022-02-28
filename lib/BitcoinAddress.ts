@@ -2,9 +2,13 @@ import * as bsv from 'bsv';
 export class BitcoinAddress { 
     constructor(private address: bsv.Address){
     }
-    
-    static fromString(address: string): BitcoinAddress {
-       return new BitcoinAddress(bsv.Address.fromString(address));
+
+    static fromString(address: string, isTestnet = false): BitcoinAddress {
+        if (isTestnet) {
+            return new BitcoinAddress(bsv.Address.Testnet.fromString(address));
+        } else {
+            return new BitcoinAddress(bsv.Address.fromString(address));
+        }
     }
 
     toString(): string {
