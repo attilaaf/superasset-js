@@ -294,6 +294,15 @@ export class TreeProcessor implements TreeProcessorInterface {
         };
         scryptBns.replaceAsmVars(asmVars);
         let tx: bsv.Tx = new bsv.Tx();
+
+        // Add the input tx to unlock
+        const txIn = new bsv.TxIn().fromProperties(
+            prevOutput.txIdBuf,  
+            prevOutput.outputIndex,
+            new bsv.Script()
+        );
+        tx.addTxIn(txIn);
+
         tx = this.addClaimOutput(bnsContractConfig, tx);
         tx = this.addExtensionOutputs(scryptBns, bnsContractConfig, tx, prevOutput);
         // Only thing missing is a funding input and a change output.

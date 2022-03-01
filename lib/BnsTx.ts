@@ -90,7 +90,7 @@ export class BnsTx implements BnsTxInterface {
 
     public unlockFundingInput(keyPair: bsv.KeyPair) {
         // Produce a signature and get the public key
-        const sig = this.tx.sign(keyPair, bsv2.Sig.SIGHASH_ALL, 1, new bsv.Script())
+       /* const sig = this.tx.sign(keyPair, bsv2.Sig.SIGHASH_ALL, 1, new bsv.Script())
         const pubKey = '';
         console.log('sig', sig);
         const txIn = new bsv2.TxIn().fromProperties(
@@ -98,7 +98,7 @@ export class BnsTx implements BnsTxInterface {
             this.fundingInput.outputIndex,
             new bsv2.Script()
         );
-        this.tx.addTxIn(txIn);
+        this.tx.addTxIn(txIn);*/
         return this;
     }
 
