@@ -1878,7 +1878,7 @@ bs58@4.0.1, bs58@=4.0.1:
   dependencies:
     base-x "^3.0.2"
 
-bsv@^1.5.6:
+bsv@^1.5.6, "bsvlegacy@npm:bsv@1.5.6":
   version "1.5.6"
   resolved "https://registry.yarnpkg.com/bsv/-/bsv-1.5.6.tgz#4efa3cab2af531d7643ec7dc731222e2d989a73d"
   integrity sha512-A0g36x63lVF9Ia6/z/RjcxaQMHE5cLl2rDxjUIKz0UTMLf5bPPyLI9yVyY2JkecF77MrU+MQdKVt0MSdU5abtw==

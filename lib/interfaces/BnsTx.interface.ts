@@ -1,24 +1,31 @@
 
 import { BitcoinAddress } from "..";
-import * as bsv from 'bsv';
+import * as bsvlegacy from 'bsvlegacy';
+import { BnsContractConfig } from "./BnsContractConfig.interface";
+import { ExtensionOutputData } from "./ExtensionOutputData.interface";
 
 export interface BnsTxInterface { 
-    // Sets change to the script (replaces multiple calls with latest)
-    setChangeOutput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
-    // Unlock the Bns input
+    
+    addBnsInput: (tx: bsvlegacy.Transaction, outputIndex: number) => BnsTxInterface;
+
+    addFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
+
+    addClaimOutput: () => BnsTxInterface;
+ 
+    addExtensionOutputs: (prevOutput: ExtensionOutputData) => BnsTxInterface;
+
+    addChangeOutput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
+
     unlockBnsInput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
-    // Adds funding input to the script
-    setFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }, unlockScript: string) => BnsTxInterface;
-    // unlock the funding input
-    unlockFundingInput: (privateKey: any) => void;
-    // Get the underlying tx
-    getTx: () => bsv.Tx;
-    // Get the required fee
+
+    signFundingInput: (privateKey: bsvlegacy.PrivateKey, sighashType: any) => BnsTxInterface;
+    
+    getTx: () => bsvlegacy.Transaction;
+
     getTotalSatoshisExcludingChange: () => number;
-    // Get the fee rate (to be called after attaching inputs and outputs)
-    // This is useful to estimate the transaction fee rate and then rebuild if needed
+
     getFeeRate: () => number;
-    // Get the total fee
+
     getFee: () => number;
 }
  

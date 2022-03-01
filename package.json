@@ -71,6 +71,7 @@
     "@types/node": "^17.0.2",
     "axios": "^0.24.0",
     "bsv": "^2.0.10",
+    "bsvlegacy": "npm:bsv@1.5.6",
     "chai-as-promised": "^7.1.1",
     "scryptlib": "^0.12.4"
   },

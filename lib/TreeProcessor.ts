@@ -247,52 +247,12 @@ export class TreeProcessor implements TreeProcessorInterface {
         tx.addTxOut(txOut);
         return tx;
     }
-
-    private addExtensionOutputs(scryptBns: any, bnsContractConfig: BnsContractConfig, tx: bsv.Tx, prevOutput: ExtensionOutputData) {
-        const dividedSatoshisBytesWithSize = new Bytes(bnsContractConfig.claimOutputSatoshisHex + 'fd' + num2bin(scryptBns.lockingScript.toHex().length / 2, 2)); // Change to length of script 
-        const lockingScriptsLevel0 = {};
-        let dupHashesLevel0;
-        // For the initial spend we must combine the root outpoint as part of the dedup hash
-        const combinedDupHash = prevOutput.dupHash + prevOutput.outpointHex + prevOutput.charHex; // 'ff'; // The parent root node is 'ff' 
-        const currentDimension = prevOutput.currentDimension + 1;
-        const dupHash = bsv.Hash.ripemd160(Buffer.from(combinedDupHash, 'hex')).toString('hex');
-        let step2ExtendLockingScripts: any = [];
-        for (let i = 0; i < letters.length; i++) {
-            let letter = letters[i];
-            dupHashesLevel0 = dupHash;
-            const newLockingScript = getLockingScriptForCharacter(scryptBns.lockingScript.toASM(), letter, currentDimension, dupHash);
-            lockingScriptsLevel0[letter] = newLockingScript;
-            step2ExtendLockingScripts.push({
-                newLockingScript,
-                dupHash
-            });
-            const valueBn = new bsv.Bn(bnsContractConfig.letterOutputSatoshisInt);
-            const script = new bsv.Script().fromHex(newLockingScript.toHex());
-            const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
-            const txOut = new bsv.TxOut().fromObject({
-                valueBn: valueBn,
-                scriptVi: scriptVi,
-                script: script
-            });
-            tx.addTxOut(txOut);
-        }
-        return tx;
-    }
  
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
-        // Add Extension Letter Outputs
-        const scryptBns = new bnsContractConfig.BNS(
-            new Bytes(bnsContractConfig.bnsConstant),
-            new Ripemd160(prevOutput.issuerPkh),
-            new Ripemd160(bnsContractConfig.claimOutputHash160),
-            new Ripemd160(prevOutput.dupHash),
-            prevOutput.currentDimension + 1,
-            new Bytes(bnsContractConfig.rootCharHex)
-        );
-        const asmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
-        };
-        scryptBns.replaceAsmVars(asmVars);
+        
+
+        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, new bsvlegacy.Transaction());
+
         let tx: bsv.Tx = new bsv.Tx();
 
         // Add the input tx to unlock
@@ -304,7 +264,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         tx.addTxIn(txIn);
 
         tx = this.addClaimOutput(bnsContractConfig, tx);
-        tx = this.addExtensionOutputs(scryptBns, bnsContractConfig, tx, prevOutput);
+        tx = this.addExtensionOutputs(bnsContractConfig, tx, prevOutput);
         // Only thing missing is a funding input and a change output.
         // It can be added like:
         // ...

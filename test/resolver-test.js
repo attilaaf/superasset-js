@@ -230,6 +230,8 @@ describe('Resolver', () => {
          };
 
          const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
+         
+         // addBnsInput
          partial.requiredBnsTx.setChangeOutput(bitcoinAddress, changeSatoshis);
          partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
          // partial.requiredBnsTx.setFundingInput(utxo);
