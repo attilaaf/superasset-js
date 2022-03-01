@@ -1,12 +1,12 @@
 import { ParameterListInsufficientSpendError, ParameterMissingError } from ".";
-import * as bsv from 'bsv';
+import * as bsv2 from 'bsv';
 import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { parseExtensionOutputData, prevOutpointFromTxIn } from "./Helpers";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
-import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage } from "scryptlib";
+import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, bsv, compile, num2bin, getPreimage } from "scryptlib";
 import { bnsclaim } from "./bnsclaim_release_desc";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
 import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
@@ -250,8 +250,7 @@ export class TreeProcessor implements TreeProcessorInterface {
  
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
         
-
-        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, new bsvlegacy.Transaction());
+        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, new bsv.Transaction());
 
         let tx: bsv.Tx = new bsv.Tx();
 

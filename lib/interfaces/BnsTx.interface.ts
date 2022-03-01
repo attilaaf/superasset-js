@@ -24,6 +24,8 @@ export interface BnsTxInterface {
 
     getTotalSatoshisExcludingChange: () => number;
 
+    getTotalSatoshis: () => number;
+
     getFeeRate: () => number;
 
     getFee: () => number;

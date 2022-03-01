@@ -215,7 +215,15 @@ export class BnsTx implements BnsTxInterface {
     public getTotalSatoshisExcludingChange(): number {
         let totalSats = 0;
         for (let i = 0; i < 39; i++) {
-            totalSats += parseInt(this.tx.txOuts[i].valueBn.toString());
+            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
+        }
+        return totalSats;
+    }
+
+    public getTotalSatoshis(): number {
+        let totalSats = 0;
+        for (let i = 0; i < this.tx.outputs.length; i++) {
+            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
         }
         return totalSats;
     }
@@ -235,8 +243,8 @@ export class BnsTx implements BnsTxInterface {
 
     private getTotalOutputs(): number {
         let totalSats = 0;
-        for (let i = 0; i < this.tx.txOuts.length; i++) {
-            totalSats += parseInt(this.tx.txOuts[i].valueBn.toString());
+        for (let i = 0; i < this.tx.outputs.length; i++) {
+            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
         }
         return totalSats;
     }
