@@ -1,5 +1,4 @@
 import { ParameterListInsufficientSpendError, ParameterMissingError } from ".";
-import * as bsv2 from 'bsv';
 import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { parseExtensionOutputData, prevOutpointFromTxIn } from "./Helpers";
@@ -12,6 +11,7 @@ import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface"
 import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { BnsTx } from "./BnsTx";
 import { BnsTxInterface } from "./interfaces/BnsTx.interface";
+
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
     const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
@@ -84,7 +84,6 @@ export class TreeProcessor implements TreeProcessorInterface {
             const tx = new bsv.Transaction(rawtxs[i]);
             const txid = tx.hash;
             const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
-            console.log('sss', prevOutpoint, outputIndex, prevTxId)
             // Enforce that each spend in the chain spends something from before
             if (!prefixMap[prevOutpoint]) {
                 // Perhaps this is the claimNFT being spent?
@@ -118,7 +117,6 @@ export class TreeProcessor implements TreeProcessorInterface {
             }
             prevTx = tx;
         }
-        console.log('re-----');
         if (nameString === '') {
             throw new ParameterListInsufficientSpendError();
         }
@@ -195,11 +193,9 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (prevOutput === null) {
             throw new ParameterMissingError();
         } 
-        console.log('rawtxs[0]------------');
         const nextMissingChar = name.charAt(i);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
         const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar);
-        console.log('rawtxs[0]ss------------');
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
@@ -239,7 +235,9 @@ export class TreeProcessor implements TreeProcessorInterface {
     }
 
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingChar: string): bsv.Tx {
-        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, new bsv.Transaction());
+        const tx = new bsv.Transaction();
+        console.log('new bsv.Transaction()', tx.setInputScript)
+        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx);
         bnsTx.addBnsInput(prevTx);
         bnsTx.addClaimOutput();
         bnsTx.addExtensionOutputs();

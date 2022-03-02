@@ -1879,6 +1879,7 @@ bs58@4.0.1, bs58@=4.0.1:
     base-x "^3.0.2"
 
 bsv@^1.5.6, "bsvlegacy@npm:bsv@1.5.6":
+  name bsvlegacy
   version "1.5.6"
   resolved "https://registry.yarnpkg.com/bsv/-/bsv-1.5.6.tgz#4efa3cab2af531d7643ec7dc731222e2d989a73d"
   integrity sha512-A0g36x63lVF9Ia6/z/RjcxaQMHE5cLl2rDxjUIKz0UTMLf5bPPyLI9yVyY2JkecF77MrU+MQdKVt0MSdU5abtw==
@@ -7192,10 +7193,10 @@ sax@~1.2.1:
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
   integrity sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==
 
-scryptlib@^0.12.4:
-  version "0.12.4"
-  resolved "https://registry.yarnpkg.com/scryptlib/-/scryptlib-0.12.4.tgz#6920bc55e06aa75ede914ca9a8eb1b8483401d75"
-  integrity sha512-CfojpvqKzS8eLSxoVT+2pl9EuZ0YeMel8Y4vP/SYur1qexXTUKxeY/O13gWOMux+ZDEYJFxy5UJzX1lgEgHyrw==
+scryptlib@^0.13.1:
+  version "0.13.1"
+  resolved "https://registry.yarnpkg.com/scryptlib/-/scryptlib-0.13.1.tgz#19e4999670e2c109f49607957186b58c7358b30e"
+  integrity sha512-VuoKNqVdR7uztz8Mq4oLjQYGnpon7jPT1LDeV4x8J2CuWJNuHm1SSwnJ6a452DnCS8sHK0hdOVIETBXBcy0pCA==
   dependencies:
     bsv "^1.5.6"
     compare-versions "^3.6.0"

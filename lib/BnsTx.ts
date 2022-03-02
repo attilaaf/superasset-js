@@ -1,4 +1,3 @@
-import * as bsv2 from 'bsv';
 import { BnsTxInterface } from './interfaces/BnsTx.interface';
 import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
 import { toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage, bsv } from 'scryptlib';
@@ -89,7 +88,7 @@ export class BnsTx implements BnsTxInterface {
                 const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
                 let preimageHex = toHex(preimage_);
                 preimage = preimage_;
-                const h = bsv2.Hash.sha256Sha256(Buffer.from(preimageHex, 'hex'));
+                const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex'));// bsv2.Hash.sha256Sha256(Buffer.from(preimageHex, 'hex'));
                 const msb = h.readUInt8();
                 if (msb < MSB_THRESHOLD) {
                     // the resulting MSB of sighash must be less than the threshold
@@ -114,8 +113,7 @@ export class BnsTx implements BnsTxInterface {
     }
     
     public unlockBnsInput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
-        const txLegacy: bsv.Transaction = new bsv.Transaction(this.tx.toHex());
-        const preimage = BnsTx.generatePreimage(true, txLegacy, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
+         const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
         const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
         const changeSatoshisBytes = num2bin(changeSatoshis, 8);
         const issuerPubKey = new Bytes('0000');
@@ -165,7 +163,6 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public addClaimOutput(): bsv.Transaction {
-        console.log('this.tx', this.tx);
         this.tx.addOutput(
             new bsv.Transaction.Output({
                 script: bsv.Script.fromHex(this.bnsContractConfig.claimOutput),
@@ -206,7 +203,6 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public getTx(): bsv.Transaction {
-        console.log('tx--', this.tx);
         return this.tx;
     }
 
