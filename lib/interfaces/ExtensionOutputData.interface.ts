@@ -1,5 +1,3 @@
-import * as bsv from 'bsv';
-
 export interface ExtensionOutputData { 
     outpointHex: string;
     txId: string;
@@ -12,6 +10,6 @@ export interface ExtensionOutputData {
     currentDimension: number;
     char: string;
     charHex: string;
-    script: bsv.Script;
+    script: any;
     satoshis: number;
 }

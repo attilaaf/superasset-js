@@ -1,9 +1,6 @@
 
-import { ExtensionOutputData } from "./ExtensionOutputData.interface";
 import { PrefixParseResult } from "./PrefixParseResult.interface";
-import { RequiredTransactionPartialResult } from "./RequiredTransactionPartialResult.interface";
-import * as bsv from 'bsv';
-
+import { RequiredTransactionPartialResult } from "./RequiredTransactionPartialResult.interface"; 
 export interface TreeProcessorInterface { 
     // Parse rawtxs to get the prefix tree represented
     validatePrefixTree: (rawtxs: string[]) => Promise<PrefixParseResult>;

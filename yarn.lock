@@ -1878,22 +1878,7 @@ bs58@4.0.1, bs58@=4.0.1:
   dependencies:
     base-x "^3.0.2"
 
-bsv@^1.5.6, "bsvlegacy@npm:bsv@1.5.6":
-  name bsvlegacy
-  version "1.5.6"
-  resolved "https://registry.yarnpkg.com/bsv/-/bsv-1.5.6.tgz#4efa3cab2af531d7643ec7dc731222e2d989a73d"
-  integrity sha512-A0g36x63lVF9Ia6/z/RjcxaQMHE5cLl2rDxjUIKz0UTMLf5bPPyLI9yVyY2JkecF77MrU+MQdKVt0MSdU5abtw==
-  dependencies:
-    aes-js "^3.1.2"
-    bn.js "=4.11.9"
-    bs58 "=4.0.1"
-    clone-deep "^4.0.1"
-    elliptic "6.5.4"
-    hash.js "^1.1.7"
-    inherits "2.0.3"
-    unorm "1.4.1"
-
-bsv@^2.0.10:
+"bsv2@npm:bsv@2.0.10":
   version "2.0.10"
   resolved "https://registry.yarnpkg.com/bsv/-/bsv-2.0.10.tgz#7eaaa6b5cc9806570eefff18f2cf8704c821b8b7"
   integrity sha512-3zMs39EaPWV6QGKYZdsrtd3q/Pnrb2B5/MkKPa1HIe8sEmLIQpHKj5DF867En0gjHSSJ91LnOCpwuujZugxqtA==
@@ -1908,6 +1893,20 @@ bsv@^2.0.10:
     is-hex "1.1.3"
     pbkdf2 "3.1.1"
     randombytes "^2.1.0"
+
+bsv@^1.5.6, "bsv@npm:bsv@1.5.6":
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/bsv/-/bsv-1.5.6.tgz#4efa3cab2af531d7643ec7dc731222e2d989a73d"
+  integrity sha512-A0g36x63lVF9Ia6/z/RjcxaQMHE5cLl2rDxjUIKz0UTMLf5bPPyLI9yVyY2JkecF77MrU+MQdKVt0MSdU5abtw==
+  dependencies:
+    aes-js "^3.1.2"
+    bn.js "=4.11.9"
+    bs58 "=4.0.1"
+    clone-deep "^4.0.1"
+    elliptic "6.5.4"
+    hash.js "^1.1.7"
+    inherits "2.0.3"
+    unorm "1.4.1"
 
 buffer-alloc-unsafe@^1.1.0:
   version "1.1.0"

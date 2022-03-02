@@ -1,12 +1,12 @@
 
 import { BitcoinAddress } from "..";
-import * as bsvlegacy from 'bsvlegacy';
+import * as bsv from 'bsv';
 import { BnsContractConfig } from "./BnsContractConfig.interface";
 import { ExtensionOutputData } from "./ExtensionOutputData.interface";
 
 export interface BnsTxInterface { 
     
-    addBnsInput: (prevTx: bsvlegacy.Transaction) => BnsTxInterface;
+    addBnsInput: (prevTx: bsv.Transaction) => BnsTxInterface;
 
     addFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
 
@@ -18,9 +18,9 @@ export interface BnsTxInterface {
 
     unlockBnsInput: (bitcoinAddress: BitcoinAddress, changeSatoshis: number) => BnsTxInterface;
 
-    signFundingInput: (privateKey: bsvlegacy.PrivateKey) => BnsTxInterface;
+    signFundingInput: (privateKey: bsv.PrivateKey) => BnsTxInterface;
     
-    getTx: () => bsvlegacy.Transaction;
+    getTx: () => bsv.Transaction;
 
     getTotalSatoshisExcludingChange: () => number;
 

@@ -1,4 +1,4 @@
-import * as bsv from 'bsv';
+import * as bsv2 from 'bsv2';
 import { BnsContractConfig } from './BnsContractConfig.interface';
 import { BnsTxInterface } from './BnsTx.interface';
 import { ExtensionOutputData } from './ExtensionOutputData.interface';
@@ -9,5 +9,5 @@ export interface RequiredTransactionPartialResult {
     fulfilledName: string;
     nextMissingChar: string;
     requiredBnsTx: BnsTxInterface;
-    prevTx: bsv.Tx;
+    prevTx: any;
 }

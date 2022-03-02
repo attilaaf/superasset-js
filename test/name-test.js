@@ -8,7 +8,7 @@ var index = require('../dist/index.js');
 var Name = require('../dist/Name.js');
 var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
 var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
-var bsv = require('bsv');
+var bsv2 = require('bsv2');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
@@ -33,7 +33,7 @@ describe('Name', () => {
       expect(name.init([rootTx], '48c9175736a7c47a4c740bd52f590ae806e8fc0dbbb653b81ea7d890f4acc969')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
    });
    it('#init should succeed matched root', async () => {
-      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const expectedRoot = (await tx.hash()).toString('hex');
       const name = new index.Name();
       await name.init([
@@ -43,13 +43,13 @@ describe('Name', () => {
    });
    it('#init should fail root unexpected output hash', async () => {
       const name = new index.Name();
-      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTxExtend, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTxExtend, 'hex'));
       const expectedRoot = (await tx.hash()).toString('hex');
       expect(name.init([rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.RootOutputHashMismatchError)
    });
    it('#init should fail with no spend of letter yet', async () => {
       const name = new index.Name();
-      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const expectedRoot = (await tx.hash()).toString('hex');
       expect(name.init([rootTx, rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.ParameterListInsufficientError)
       try {
@@ -60,7 +60,7 @@ describe('Name', () => {
    });
 
    it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false', async () => {
-      const tx = bsv.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
       await name.init([
@@ -71,7 +71,7 @@ describe('Name', () => {
    });
 
    it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false for BA', async () => {
-      const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const name = new index.Name();
       const expectedRoot = (await tx.hash()).toString('hex');
       await name.init([
@@ -93,7 +93,7 @@ describe('Name', () => {
    });
 
    it('#getOwner should succeed with the default unclaimed address', async () => {
-      const tx = bsv.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
+      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const name = new index.Name({testnet: true});
       const expectedRoot = (await tx.hash()).toString('hex');
       await name.init([

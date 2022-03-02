@@ -1,13 +1,13 @@
-import * as bsv from 'bsv';
+import * as bsv2 from 'bsv2';
 export class BitcoinAddress { 
-    constructor(private address: bsv.Address){
+    constructor(private address: bsv2.Address){
     }
 
     static fromString(address: string, isTestnet = false): BitcoinAddress {
         if (isTestnet) {
-            return new BitcoinAddress(bsv.Address.Testnet.fromString(address));
+            return new BitcoinAddress(bsv2.Address.Testnet.fromString(address));
         } else {
-            return new BitcoinAddress(bsv.Address.fromString(address));
+            return new BitcoinAddress(bsv2.Address.fromString(address));
         }
     }
 

@@ -4,7 +4,7 @@ import { ParameterListEmptyError } from "./errors/ParameterListEmptyError";
 import { ParameterMissingError } from "./errors/ParameterMissingError";
 import { NameInterface } from "./interfaces/Name.interface";
 import { OpResult } from "./interfaces/OpResult.interface";
-import * as bsv from 'bsv';
+import * as bsv2 from 'bsv2';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
@@ -43,13 +43,13 @@ export class Name implements NameInterface {
             throw new ParameterExpectedRootEmptyError();
         }
 
-        const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
+        const rootTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const calculatedRoot = (await rootTx.hash()).toString('hex');
         if (expectedRoot !== calculatedRoot) {
             throw new ParameterExpectedRootMismatchError();
         }
         // Make sure the first output is a BNS output of a known hash type
-        const outputHash = bsv.Hash.ripemd160(rootTx.txOuts[0].script.toBuffer()).toString('hex');
+        const outputHash = bsv2.Hash.ripemd160(rootTx.txOuts[0].script.toBuffer()).toString('hex');
         if (this.bnsOutputRipemd160 !== outputHash) {
             throw new RootOutputHashMismatchError();
         }
@@ -61,7 +61,7 @@ export class Name implements NameInterface {
         this.initialized = true;
     }
     private async validateBuildRecords(rawtxs: string[]) {
-        const mintTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
+        const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')
         const assetId = assetTxId + '00000000';
         let prefixMap = {};
@@ -69,14 +69,14 @@ export class Name implements NameInterface {
         let prevTx = mintTx;
         let address;
         if (this.opts?.testnet) {
-            address = new bsv.Address.Testnet();
-            address.versionByteNum = bsv.Constants.Testnet.Address.pubKeyHash;
+            address = new bsv2.Address.Testnet();
+            address.versionByteNum = bsv2.Constants.Testnet.Address.pubKeyHash;
         } else {
-            address = new bsv.Address();
+            address = new bsv2.Address();
         }
         this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
         for (let i = 1; i < rawtxs.length; i++) {  
-            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
+            const tx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
             const txId = (await tx.hash()).toString('hex');
             const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
             // Enforce that each spend in the chain spends something from before
