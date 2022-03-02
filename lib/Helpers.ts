@@ -4,8 +4,9 @@ import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface'
 export const sighashType2Hex = s => s.toString(16)
  
 export const prevOutpointFromTxIn = (txIn) => {
-    const prevTxId = txIn.txHashBuf.toString('hex');
-    const outputIndex = txIn.txOutNum;
+    console.log('txIn', txIn);
+    const prevTxId = txIn.prevTxId.toString('hex');
+    const outputIndex = txIn.outputIndex;
     return {
         outputIndex,
         prevTxId,
@@ -18,10 +19,11 @@ export const intToLE = (i) => {
     return buf.toString('hex');
 }
 
-export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
-    const script = tx.txOuts[outputIndex].script;
-    const satoshis = parseInt(tx.txOuts[outputIndex].valueBn.toString());
-    const txId = await tx.hash();
+export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
+    const script = tx.outputs[outputIndex].script;
+   // console.log('tx.outputs[outputIndex]', tx.outputs[outputIndex].satoshis);
+    const satoshis = tx.outputs[outputIndex].satoshis;
+    const txId =tx.hash
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('utf8'),
         issuerPkh: script.chunks[1].buf.toString('hex'),
@@ -31,8 +33,8 @@ export const parseExtensionOutputData = async (tx: bsv.Tx, outputIndex: number):
         char: script.chunks[5].buf.toString('utf8'),
         charHex: script.chunks[5].buf.toString('hex'),
         outpointHex: txId.toString() + intToLE(outputIndex),
-        txId: txId.toString(),
-        txIdBuf: txId,
+        txId: txId,
+        txIdBuf: Buffer.from(txId, 'hex'),
         script,
         outputIndex,
         satoshis,

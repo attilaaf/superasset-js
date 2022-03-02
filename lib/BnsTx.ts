@@ -8,17 +8,17 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 const MSB_THRESHOLD = 0x7e;
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
-    const script = bsv.Script.fromAsmString(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
+    const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
     return script;
 }
 function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, dupHash) {
     const slicedPrefix = lockingScriptASM.substring(0, 90);
     const slicedSuffix = lockingScriptASM.substring(138);
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
-    return bsv.Script.fromAsmString(replaced);
+    return bsv.Script.fromASM(replaced);
 }
 
-const Signature = bsv.Sig;
+const Signature = bsv.crypto.Signature;
 const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const letters = [
     '2d',
@@ -120,11 +120,10 @@ export class BnsTx implements BnsTxInterface {
         const changeSatoshisBytes = num2bin(changeSatoshis, 8);
         const issuerPubKey = new Bytes('0000');
         const issuerSig = new Bytes('0000');
-
         const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2);
         const scriptUnlock = this.scryptBns.extend(
             preimage,
-            new Bytes(dividedSatoshisBytesWithSize), // Todo: is size needed here?
+            new Bytes(dividedSatoshisBytesWithSize),
             new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
             changeAddress,
             new Bytes(changeSatoshisBytes),
@@ -132,27 +131,25 @@ export class BnsTx implements BnsTxInterface {
             issuerSig,
             issuerPubKey).toScript();
 
-        const txIn = new bsv2.TxIn().fromProperties(
-            this.prevOutput.txIdBuf,  
-            this.prevOutput.outputIndex,
-            scriptUnlock
-        );
-        this.tx.addTxIn(txIn);
+        this.tx.setInputScript(0, (tx, output) => {
+            return scriptUnlock;
+        });
         return this;
     }
 
-    public signFundingInput(privateKey: bsv.PrivateKey, sighashType: any) {
- 
+    public signFundingInput(privateKey: bsv.PrivateKey) {
+        this.tx.sign(privateKey, Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_FORKID)
+        .seal()
         return this;
     }
 
-    public addBnsInput(tx: bsv.Transaction, outputIndex: number): BnsTxInterface {
-        const outputIdx = outputIndex || 0
+    public addBnsInput(prevTx: bsv.Transaction): BnsTxInterface {
+        const outputIdx = this.prevOutput.outputIndex || 0
         this.tx.addInput(new bsv.Transaction.Input({
-          prevTxId: tx.id,
+          prevTxId: prevTx.id,
           outputIndex: outputIdx,
           script: new bsv.Script(), // placeholder
-          output: tx.outputs[outputIdx]
+          output: prevTx.outputs[outputIdx]
         }));
         return this.tx;
     }
@@ -167,24 +164,26 @@ export class BnsTx implements BnsTxInterface {
         return this.tx;
     }
 
-    public addClaimOutput(): bsv.Tx {
-        this.tx.setOutput(0, (tx) => {
-            return new bsv.Transaction.Output({
+    public addClaimOutput(): bsv.Transaction {
+        console.log('this.tx', this.tx);
+        this.tx.addOutput(
+            new bsv.Transaction.Output({
                 script: bsv.Script.fromHex(this.bnsContractConfig.claimOutput),
                 satoshis: this.bnsContractConfig.claimOutputSatoshisInt,
-            });
-        });
+            })
+        );
+  
         return this.tx;
     }
 
-    public addExtensionOutputs(prevOutput: ExtensionOutputData) {
+    public addExtensionOutputs() {
         const dividedSatoshisBytesWithSize = new Bytes(this.bnsContractConfig.claimOutputSatoshisHex + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2)); // Change to length of script 
         const lockingScriptsLevel0 = {};
         let dupHashesLevel0;
         // For the initial spend we must combine the root outpoint as part of the dedup hash
-        const combinedDupHash = prevOutput.dupHash + prevOutput.outpointHex + prevOutput.charHex; // 'ff'; // The parent root node is 'ff' 
-        const currentDimension = prevOutput.currentDimension + 1;
-        const dupHash = bsv.Hash.ripemd160(Buffer.from(combinedDupHash, 'hex')).toString('hex');
+        const combinedDupHash = this.prevOutput.dupHash + this.prevOutput.outpointHex + this.prevOutput.charHex; // 'ff'; // The parent root node is 'ff' 
+        const currentDimension = this.prevOutput.currentDimension + 1;
+        const dupHash = bsv.crypto.Hash.ripemd160(Buffer.from(combinedDupHash, 'hex')).toString('hex');
         let step2ExtendLockingScripts: any = [];
         for (let i = 0; i < letters.length; i++) {
             let letter = letters[i];
@@ -195,27 +194,26 @@ export class BnsTx implements BnsTxInterface {
                 newLockingScript,
                 dupHash
             });
-            const valueBn = new bsv.Bn(this.bnsContractConfig.letterOutputSatoshisInt);
-            const script = new bsv.Script().fromHex(newLockingScript.toHex());
-            const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
-            const txOut = new bsv.TxOut().fromObject({
-                valueBn: valueBn,
-                scriptVi: scriptVi,
-                script: script
-            });
-            this.tx.addTxOut(txOut);
+
+            this.tx.addOutput(
+                new bsv.Transaction.Output({
+                    script: newLockingScript,
+                    satoshis: this.bnsContractConfig.letterOutputSatoshisInt,
+                })
+            );
         }
         return this.tx;
     }
 
-    public getTx(): bsv2.Tx {
+    public getTx(): bsv.Transaction {
+        console.log('tx--', this.tx);
         return this.tx;
     }
 
     public getTotalSatoshisExcludingChange(): number {
         let totalSats = 0;
         for (let i = 0; i < 39; i++) {
-            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
+            totalSats += this.tx.outputs[i].satoshis;
         }
         return totalSats;
     }
@@ -223,7 +221,7 @@ export class BnsTx implements BnsTxInterface {
     public getTotalSatoshis(): number {
         let totalSats = 0;
         for (let i = 0; i < this.tx.outputs.length; i++) {
-            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
+            totalSats += this.tx.outputs[i].satoshis;
         }
         return totalSats;
     }

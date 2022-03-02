@@ -166,6 +166,7 @@ describe('Resolver', () => {
       try {
          await resolver.getName('ba')
       } catch (err){
+         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
@@ -173,12 +174,10 @@ describe('Resolver', () => {
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
          expect(!!partial.requiredBnsTx).to.equal(true);
-         const claimValueBn = new bsv.Bn(300);
-         expect(partial.requiredBnsTx.getTx().txOuts[0].valueBn).to.eql(claimValueBn);
-         expect(partial.requiredBnsTx.getTx().txOuts.length).to.equal(39);
-         for (let i = 1; i < partial.requiredBnsTx.getTx().txOuts.length; i++) {
-            const extValueBn = new bsv.Bn(800);
-            expect(partial.requiredBnsTx.getTx().txOuts[i].valueBn).to.eql(extValueBn);
+         expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
+         expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
+         for (let i = 1; i < partial.requiredBnsTx.getTx().outputs.length; i++) {
+            expect(partial.requiredBnsTx.getTx().outputs[i].satoshis).to.eql(800);
          }
          return;
       }
@@ -208,12 +207,10 @@ describe('Resolver', () => {
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.nextMissingChar).to.equal('a');
          expect(!!partial.requiredBnsTx).to.equal(true);
-         const claimValueBn = new bsv.Bn(300);
-         expect(partial.requiredBnsTx.getTx().txOuts[0].valueBn).to.eql(claimValueBn);
-         expect(partial.requiredBnsTx.getTx().txOuts.length).to.equal(39);
-         for (let i = 1; i < partial.requiredBnsTx.getTx().txOuts.length; i++) {
-            const extValueBn = new bsv.Bn(800);
-            expect(partial.requiredBnsTx.getTx().txOuts[i].valueBn).to.eql(extValueBn);
+         expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
+         expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
+         for (let i = 1; i < partial.requiredBnsTx.getTx().outputs.length; i++) {
+            expect(partial.requiredBnsTx.getTx().outputs[i].satoshis).to.eql(800);
          }
          const outputSats = 300 + 800 * 38;
          expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
@@ -233,7 +230,7 @@ describe('Resolver', () => {
          
          // addBnsInput
          partial.requiredBnsTx.setChangeOutput(bitcoinAddress, changeSatoshis);
-         partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
+         //partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
          // partial.requiredBnsTx.setFundingInput(utxo);
 
          const key = 'cPiAuukeNemjVCx76Vf6Fn5oUn7z9dPCvgY3b3H9m5hKCfE4BWvS'

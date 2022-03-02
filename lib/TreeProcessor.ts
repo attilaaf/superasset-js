@@ -14,17 +14,18 @@ import { BnsTx } from "./BnsTx";
 import { BnsTxInterface } from "./interfaces/BnsTx.interface";
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
-    const script = bsv.Script.fromAsmString(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
+    const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
     return script;
 }
+
 function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, dupHash) {
     const slicedPrefix = lockingScriptASM.substring(0, 90);
     const slicedSuffix = lockingScriptASM.substring(138);
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
-    return bsv.Script.fromAsmString(replaced);
+    return bsv.Script.fromASM(replaced);
 }
 
-const Signature = bsv.Sig;
+const Signature = bsv.crypto.Signature;
 const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const letters = [
     '2d',
@@ -72,17 +73,18 @@ const letters = [
  */
 export class TreeProcessor implements TreeProcessorInterface { 
     public async validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
-        const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await rootTx.hash()).toString('hex');
+        const rootTx = new bsv.Transaction(rawtxs[0]);
+        const calculatedRoot = rootTx.hash;
         let prefixMap = {};
         prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
         let nameString = '';
         let prevPotentialClaimNft = '';
         let prevTx = rootTx;
         for (let i = 1; i < rawtxs.length; i++) {  
-            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
-            const txId = (await tx.hash()).toString('hex');
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
+            const tx = new bsv.Transaction(rawtxs[i]);
+            const txid = tx.hash;
+            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
+            console.log('sss', prevOutpoint, outputIndex, prevTxId)
             // Enforce that each spend in the chain spends something from before
             if (!prefixMap[prevOutpoint]) {
                 // Perhaps this is the claimNFT being spent?
@@ -100,22 +102,23 @@ export class TreeProcessor implements TreeProcessorInterface {
             } else {
                 // Do not concat the root node, skip it
                 if (i > 1) {
-                    const prevTxOut = prevTx.txOuts[outputIndex];
+                    const prevTxOut = prevTx.outputs[outputIndex];
                     const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
                     nameString += letter; // Add the current letter that was spent
                 }
             }
             // Clear off the map to ensure a rawtx must spend something directly of it's parent
             prefixMap = {};
-            prevPotentialClaimNft = txId + '00000000'; // Potential NFT is always at position 1
+            prevPotentialClaimNft = txid + '00000000'; // Potential NFT is always at position 1
             for (let o = 1; o < 38; o++) {  
                 const buf = Buffer.allocUnsafe(4);
                 buf.writeInt32LE(o);
                 const outNumString = buf.toString('hex');
-                prefixMap[txId + outNumString] = tx.txOuts[o];
+                prefixMap[txid + outNumString] = tx.outputs[o];
             }
             prevTx = tx;
         }
+        console.log('re-----');
         if (nameString === '') {
             throw new ParameterListInsufficientSpendError();
         }
@@ -127,8 +130,8 @@ export class TreeProcessor implements TreeProcessorInterface {
     }
 
     public async getRequiredTransactionPartial(name: string, rawtxs: string[]): Promise<RequiredTransactionPartialResult> {
-        const rootTx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await rootTx.hash()).toString('hex');
+        const rootTx = new bsv.Transaction(rawtxs[0]);
+        const calculatedRoot = rootTx.hash;
         let prefixMap = {};
         prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
         let nameString = '';
@@ -150,16 +153,16 @@ export class TreeProcessor implements TreeProcessorInterface {
             throw new InvalidCharError('invalid charHex');
         }
         for (let i = 1; i < rawtxs.length; i++) {  
-            const tx = bsv.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
-            const txId = (await tx.hash()).toString('hex');
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
+            const tx = new bsv.Transaction(rawtxs[i]);
+            const txId = tx.hash;
+            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
             // Enforce that each spend in the chain spends something from before
             if (!prefixMap[prevOutpoint]) {
                 throw new PrefixChainMismatchError();
             } else {
                 // Do not concat the root node, skip it
                 if (i > 1) {
-                    const prevTxOut = prevTx.txOuts[outputIndex];
+                    const prevTxOut = prevTx.outputs[outputIndex];
                     prevOutput = await parseExtensionOutputData(prevTx, outputIndex);
                     if (!prevOutput) {
                         console.log('Should not happen prevOutput is null');
@@ -175,7 +178,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 const buf = Buffer.allocUnsafe(4);
                 buf.writeInt32LE(o);
                 const outNumString = buf.toString('hex');
-                prefixMap[txId + outNumString] = tx.txOuts[o];
+                prefixMap[txId + outNumString] = tx.outputs[o];
             }
             prevTx = tx;
         }
@@ -192,10 +195,11 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (prevOutput === null) {
             throw new ParameterMissingError();
         } 
-
+        console.log('rawtxs[0]------------');
         const nextMissingChar = name.charAt(i);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        const requiredBnsTx: BnsTxInterface = new BnsTx(bnsContractConfig, prevOutput, this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar));
+        const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar);
+        console.log('rawtxs[0]ss------------');
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
@@ -213,7 +217,6 @@ export class TreeProcessor implements TreeProcessorInterface {
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
         const BNS = buildContractClass(bnsclaim());
-        const tx = new bsv.Tx();
         const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
         const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
         const claimNftScript = claimNftScriptSCRIPT.toHex();
@@ -221,7 +224,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimOutputSatoshisHex = num2bin(claimOutputSatoshisInt, 8)
         const outputSize = '3f'; // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
         const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
-        const claimOutputHash160 = bsv.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
+        const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
         return {///Hash.sha256Ripemd160
             BNS,
             miningFee: 13000,
@@ -235,42 +238,11 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
     }
 
-    private addClaimOutput(bnsContractConfig: BnsContractConfig, tx: bsv.Tx): bsv.Tx {
-        const valueBn = new bsv.Bn(bnsContractConfig.claimOutputSatoshisInt);
-        const script = new bsv.Script().fromHex(bnsContractConfig.claimOutput);
-        const scriptVi = bsv.VarInt.fromNumber(script.toBuffer().length);
-        const txOut = new bsv.TxOut().fromObject({
-            valueBn: valueBn,
-            scriptVi: scriptVi,
-            script: script
-        });
-        tx.addTxOut(txOut);
-        return tx;
-    }
- 
-    private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Tx, nextMissingChar: string): bsv.Tx {
-        
+    private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingChar: string): bsv.Tx {
         let bnsTx = new BnsTx(bnsContractConfig, prevOutput, new bsv.Transaction());
-
-        let tx: bsv.Tx = new bsv.Tx();
-
-        // Add the input tx to unlock
-        const txIn = new bsv.TxIn().fromProperties(
-            prevOutput.txIdBuf,  
-            prevOutput.outputIndex,
-            new bsv.Script()
-        );
-        tx.addTxIn(txIn);
-
-        tx = this.addClaimOutput(bnsContractConfig, tx);
-        tx = this.addExtensionOutputs(bnsContractConfig, tx, prevOutput);
-        // Only thing missing is a funding input and a change output.
-        // It can be added like:
-        // ...
-        /*
-           const updatedTx = TreeProcessor.attachUnlockAndChangeOutput(prevOutput, bnsContractConfig, tx, txOut);
-           // Now attach required funding input by summing the total outputs and then adding at least enough to cover mining fee
-        */
-        return tx;
+        bnsTx.addBnsInput(prevTx);
+        bnsTx.addClaimOutput();
+        bnsTx.addExtensionOutputs();
+        return bnsTx;
     }
 }
