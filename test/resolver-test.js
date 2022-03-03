@@ -11,6 +11,7 @@ var bsv2 = require('bsv2');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
+var { bsv } = require('scryptlib');
  
 describe('Resolver', () => {
  
@@ -166,7 +167,6 @@ describe('Resolver', () => {
       try {
          await resolver.getName('ba')
       } catch (err){
-         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
@@ -191,21 +191,21 @@ describe('Resolver', () => {
             return {
                result: 'success',
                rawtxs: [
-                  baRoot, baRootExtend, baRootExtendB
+                  baRoot, baRootExtend, baRootExtendB, baRootExtendBA
                ]
             };
          },
          root
       });
       try {
-         await resolver.getName('ba')
+         await resolver.getName('bat')
       } catch (err){
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
          expect(partial.success).to.be.false;
-         expect(partial.fulfilledName).to.equal('b');
-         expect(partial.nextMissingChar).to.equal('a');
+         expect(partial.fulfilledName).to.equal('ba');
+         expect(partial.nextMissingChar).to.equal('t');
          expect(!!partial.requiredBnsTx).to.equal(true);
          expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
          expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
@@ -214,11 +214,8 @@ describe('Resolver', () => {
          }
          const outputSats = 300 + 800 * 38;
          expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
-         
-
+      
          const bitcoinAddress = index.BitcoinAddress.fromString('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh', true);
-         console.log('bitcoinAddress', bitcoinAddress);
- 
          const utxo = {
             txid: '1a2c2f3d15b79b8c5c0c5db89b14452d451d4ca87c2cafa94392e821407e6a34',
             outputIndex: 39,
@@ -228,32 +225,16 @@ describe('Resolver', () => {
 
          const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
          
-         // addBnsInput
+         partial.requiredBnsTx.addFundingInput(utxo);
          partial.requiredBnsTx.addChangeOutput(bitcoinAddress, changeSatoshis);
          partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
-         // partial.requiredBnsTx.setFundingInput(utxo);
-
+   
          const key = 'cPiAuukeNemjVCx76Vf6Fn5oUn7z9dPCvgY3b3H9m5hKCfE4BWvS'
-         const privKey = new bsv2.PrivKey.Testnet();
-         privKey.fromWif(key);
+         const privKey = new bsv.PrivateKey.fromWIF(key);;
+         partial.requiredBnsTx.signFundingInput(privKey)
 
-         const pubKey = bsv2.PubKey.fromPrivKey(privKey)
-         console.log('pubKey', pubKey);
-         const keyPair = new bsv2.KeyPair.Testnet().fromJSON({
-            privKey: privKey.toJSON(),
-            pubKey: pubKey.toJSON()
-         });
-
-         console.log('partial.requiredBnsTx updated', keyPair);
-         // partial.requiredBnsTx.unlockFundingInput(keyPair);
-
-         // expect(partial.requiredBnsTx.getFeeRate() >= 0.5 && partial.requiredBnsTx.getFeeRate() <= 0.51).to.eql(true);
-         // expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5010792476102375);
-         // expect(partial.requiredBnsTx.getFee()).to.eql(13000);
-
-         console.log('tx generated', partial.requiredBnsTx.getTx().toString());
-         console.log('tx generated json', partial.requiredBnsTx.getTx());
-
+         expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5370981355021868);
+         expect(partial.requiredBnsTx.getFee()).to.eql(14000);
          return;
       }
       expect(false).to.be.true;

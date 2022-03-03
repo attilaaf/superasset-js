@@ -4,7 +4,6 @@ import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface'
 export const sighashType2Hex = s => s.toString(16)
  
 export const prevOutpointFromTxIn = (txIn) => {
-    console.log('txIn', txIn);
     const prevTxId = txIn.prevTxId.toString('hex');
     const outputIndex = txIn.outputIndex;
     return {

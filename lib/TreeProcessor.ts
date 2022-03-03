@@ -188,7 +188,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             if (i === -1) {
                 throw new ParameterMissingError();
             }
-            i = i + 1;
+            i = i + nameString.length;
         }
         if (prevOutput === null) {
             throw new ParameterMissingError();
@@ -223,7 +223,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
         return {///Hash.sha256Ripemd160
             BNS,
-            miningFee: 13000,
+            miningFee: 14000,
             bnsConstant,
             claimOutputHash160,
             claimOutput,
@@ -236,7 +236,6 @@ export class TreeProcessor implements TreeProcessorInterface {
 
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingChar: string): bsv.Tx {
         const tx = new bsv.Transaction();
-        console.log('new bsv.Transaction()', tx.setInputScript)
         let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx);
         bnsTx.addBnsInput(prevTx);
         bnsTx.addClaimOutput();

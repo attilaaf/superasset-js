@@ -153,12 +153,13 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public addFundingInput(utxo: { txid: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
+        this.fundingInput = utxo;
         this.tx.addInput(new bsv.Transaction.Input({
           prevTxId: utxo.txid,
           outputIndex: utxo.outputIndex,
           script: new bsv.Script(),  
-          output: utxo.script
-        }));
+        }), utxo.script, utxo.satoshis);
+
         return this.tx;
     }
 
@@ -223,7 +224,7 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public getFeeRate(): number {
-        const rawTxHexSize = this.tx.toHex().length / 2;
+        const rawTxHexSize = this.tx.toString().length / 2;
         return this.getFee() / rawTxHexSize;
     }
 
@@ -238,7 +239,7 @@ export class BnsTx implements BnsTxInterface {
     private getTotalOutputs(): number {
         let totalSats = 0;
         for (let i = 0; i < this.tx.outputs.length; i++) {
-            totalSats += parseInt(this.tx.outputs[i].valueBn.toString());
+            totalSats += parseInt(this.tx.outputs[i].satoshis);
         }
         return totalSats;
     }
