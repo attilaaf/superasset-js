@@ -248,6 +248,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             bnsConstant,
             claimOutputHash160,
             claimOutput,
+            claimNftScript,
             claimOutputSatoshisInt,
             letterOutputSatoshisInt,
             rootCharHex: 'ff',

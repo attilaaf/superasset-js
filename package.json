@@ -7,7 +7,8 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && gulp build",
-    "test": "mocha --timeout=30000 --reporter spec"
+    "test": "mocha --timeout=30000 --reporter spec",
+    "e2e": "mocha --grep e2e  --timeout=30000 --reporter spec"
   },
   "repository": {
     "type": "git",

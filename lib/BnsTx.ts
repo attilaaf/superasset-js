@@ -71,6 +71,7 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'constructor.dupHash', this.prevOutput.dupHash);
             console.log('Debug', 'constructor.bnsContractConfig.rootCharHex', this.bnsContractConfig.rootCharHex);
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
+            console.log('Debug', 'constructor.sighashTypeBns', sighashTypeBns.toString(16));
         }
         this.scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.bnsContractConfig.bnsConstant),
@@ -184,7 +185,7 @@ export class BnsTx implements BnsTxInterface {
     public addClaimOutput(): bsv.Transaction {
         this.tx.addOutput(
             new bsv.Transaction.Output({
-                script: bsv.Script.fromHex(this.bnsContractConfig.claimOutput),
+                script: bsv.Script.fromHex(this.bnsContractConfig.claimNftScript),
                 satoshis: this.bnsContractConfig.claimOutputSatoshisInt,
             })
         );
@@ -204,6 +205,7 @@ export class BnsTx implements BnsTxInterface {
         if (this.debug) {
             console.log('Debug', 'addExtensionOutputs.prevOutput.dupHash', this.prevOutput.dupHash);
             console.log('Debug', 'addExtensionOutputs.prevOutput.charHex', this.prevOutput.charHex);
+            console.log('Debug', 'addExtensionOutputs.prevOutput.char', this.prevOutput.char);
             console.log('Debug', 'addExtensionOutputs.prevOutput.outpointHex', this.prevOutput.outpointHex);
             console.log('Debug', 'addExtensionOutput.currentDimension', currentDimension);
             console.log('Debug', 'addExtensionOutput.dupHash', dupHash);
