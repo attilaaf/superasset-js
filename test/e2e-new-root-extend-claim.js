@@ -41,6 +41,9 @@ describe('Create new root, extend and claim bat', () => {
       await sleeper(5);
       const txChain = [ tx.toString() ];
       let counter = 0;
+      // Update the bnsOutputRipemd160 
+      const bnsOutputRipemd160 = bsv.crypto.Hash.ripemd160(tx.outputs[0].script.toBuffer()).toString('hex');
+      console.log('bnsOutputRipemd160 computed', bnsOutputRipemd160);
       try {
       do {
             console.log('Counter', counter);
@@ -53,7 +56,8 @@ describe('Create new root, extend and claim bat', () => {
                   };
                },
                root: testRoot,
-               debug: true
+               debug: true,
+               bnsOutputRipemd160
             });
 
             try {
@@ -61,6 +65,7 @@ describe('Create new root, extend and claim bat', () => {
                console.log('name', name);
                break;
             } catch (err) {
+               console.log('err', err);
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
@@ -99,6 +104,7 @@ describe('Create new root, extend and claim bat', () => {
          } while (true);
       } catch (ex) {
          console.log('Exception Wrapper', ex);
+         expect(false).to.be.true;
       }
      // done();
    });

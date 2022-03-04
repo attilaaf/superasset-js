@@ -18,6 +18,7 @@ export { MissingNextTransactionError } from "./errors/MissingNextTransactionErro
 export { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 export { NotInitError } from "./errors/NotInitError";
 export { NFTChainError } from "./errors/NFTChainError";
+export { bnsclaim } from "./bnsclaim_release_desc";
 export {
   InvalidBnsConstantError,
   InvalidCurrentDimensionError,

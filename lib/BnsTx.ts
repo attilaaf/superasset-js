@@ -88,6 +88,7 @@ export class BnsTx implements BnsTxInterface {
     }
 
     static generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
+        console.log('generatePreimage.lockingScriptASM', lockingScriptASM, satValue, sighashType)
         let preimage: any = null;
         if (isOpt) {
             for (let i = 0; ; i++) {

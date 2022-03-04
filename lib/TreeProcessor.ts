@@ -242,9 +242,9 @@ export class TreeProcessor implements TreeProcessorInterface {
         const outputSize = num2bin(claimNftScript.length / 2, 1); // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
         const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
         const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
-        return {///Hash.sha256Ripemd160
+        return {
             BNS,
-            miningFee: 14000,
+            miningFee: 16000,
             bnsConstant,
             claimOutputHash160,
             claimOutput,
