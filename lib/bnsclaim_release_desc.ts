@@ -1,29 +1,109 @@
 export function bnsclaim(): any {
     return {
-        "version": 7,
-        "compilerVersion": "1.7.0+commit.c3c53bb",
+        "version": 8,
+        "compilerVersion": "1.8.4+commit.247b31f",
         "contract": "BNS",
-        "md5": "62038da5e0d77a7a4cbf7e58e27599e5",
+        "md5": "8fc872457ec369f630b6f9e40ec7f534",
         "structs": [],
+        "library": [
+            {
+                "name": "OpCode",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            },
+            {
+                "name": "Utils",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            },
+            {
+                "name": "SigHash",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            },
+            {
+                "name": "Tx",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            },
+            {
+                "name": "VarIntReader",
+                "params": [
+                    {
+                        "name": "ctor.buf",
+                        "type": "bytes"
+                    }
+                ],
+                "properties": [
+                    {
+                        "name": "buf",
+                        "type": "bytes"
+                    },
+                    {
+                        "name": "pos",
+                        "type": "int"
+                    }
+                ],
+                "genericTypes": []
+            },
+            {
+                "name": "HashedMap",
+                "params": [
+                    {
+                        "name": "_data",
+                        "type": "bytes"
+                    }
+                ],
+                "properties": [
+                    {
+                        "name": "_data",
+                        "type": "bytes"
+                    }
+                ],
+                "genericTypes": [
+                    "K",
+                    "V"
+                ]
+            },
+            {
+                "name": "HashedSet",
+                "params": [
+                    {
+                        "name": "_data",
+                        "type": "bytes"
+                    }
+                ],
+                "properties": [
+                    {
+                        "name": "_data",
+                        "type": "bytes"
+                    }
+                ],
+                "genericTypes": [
+                    "E"
+                ]
+            },
+            {
+                "name": "VarIntWriter",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            },
+            {
+                "name": "Constants",
+                "params": [],
+                "properties": [],
+                "genericTypes": []
+            }
+        ],
         "alias": [
             {
                 "name": "PubKeyHash",
                 "type": "Ripemd160"
-            }
-        ],
-        "generics": [
-            {
-                "genericTypes": [
-                    "__SCRYPT_K__",
-                    "__SCRYPT_V__"
-                ],
-                "library": "HashedMap"
-            },
-            {
-                "genericTypes": [
-                    "__SCRYPT_E__"
-                ],
-                "library": "HashedSet"
             }
         ],
         "abi": [

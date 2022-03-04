@@ -27,6 +27,7 @@ export class Resolver implements ResolverInterface {
         testnet: false,
         root: BNS_ROOT,
         url: BNS_API_URL,
+        debug: false,
         bnsOutputRipemd160: 'b3b582b4ae134d329c99ef665b7e31b226892a17'
     }
 

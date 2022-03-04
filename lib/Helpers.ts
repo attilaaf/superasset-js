@@ -31,7 +31,7 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
         currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
         char: script.chunks[5].buf.toString('utf8'),
         charHex: script.chunks[5].buf.toString('hex'),
-        outpointHex: txId.toString() + intToLE(outputIndex),
+        outpointHex: Buffer.from(txId, 'hex').reverse().toString('hex') + intToLE(outputIndex),
         txId: txId,
         txIdBuf: Buffer.from(txId, 'hex'),
         script,

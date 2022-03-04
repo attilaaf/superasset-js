@@ -239,7 +239,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimNftScript = claimNftScriptSCRIPT.toHex();
         const claimOutputSatoshisInt = 300;
  
-        const outputSize = '3f'; // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
+        const outputSize = num2bin(claimNftScript.length / 2, 1); // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
         const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
         const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
         return {///Hash.sha256Ripemd160
@@ -256,7 +256,7 @@ export class TreeProcessor implements TreeProcessorInterface {
 
     private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingChar: string): bsv.Tx {
         const tx = new bsv.Transaction();
-        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx);
+        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx, true);
         bnsTx.addBnsInput(prevTx);
         bnsTx.addClaimOutput();
         bnsTx.addExtensionOutputs();

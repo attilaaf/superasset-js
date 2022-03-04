@@ -167,7 +167,6 @@ describe('Resolver', () => {
       try {
          await resolver.getName('ba')
       } catch (err){
-         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;

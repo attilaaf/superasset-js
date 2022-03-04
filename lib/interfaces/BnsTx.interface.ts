@@ -8,7 +8,7 @@ export interface BnsTxInterface {
     
     addBnsInput: (prevTx: bsv.Transaction) => BnsTxInterface;
 
-    addFundingInput: (utxo: { txid: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
+    addFundingInput: (utxo: { txId: string, txid?: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
 
     addClaimOutput: () => BnsTxInterface;
  
