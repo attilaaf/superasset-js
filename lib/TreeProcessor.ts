@@ -79,6 +79,12 @@ export class TreeProcessor implements TreeProcessorInterface {
         let nameString = '';
         let prevPotentialClaimNft = '';
         let prevTx = rootTx;
+
+        // todo: We MUST validate that the root (first tx) is the actual root
+        const rootExtOutputData: ExtensionOutputData | null = await parseExtensionOutputData(rootTx, 0);
+        if (!rootExtOutputData || rootExtOutputData.charHex !== 'ff') {
+            throw new Error('Expected first transaction to be root BNS tree');
+        }
         for (let i = 1; i < rawtxs.length; i++) {  
             const tx = new bsv.Transaction(rawtxs[i]);
             const txid = tx.hash;
@@ -116,6 +122,16 @@ export class TreeProcessor implements TreeProcessorInterface {
             }
             prevTx = tx;
         }
+       
+        if (rawtxs.length === 1) {
+            console.log('rawtxs length is 1')
+            return {
+                rawtxIndexForClaim: -1,
+                nameString,
+                isClaimed: false,
+            }
+        }
+
         if (nameString === '') {
             throw new ParameterListInsufficientSpendError();
         }
@@ -135,6 +151,11 @@ export class TreeProcessor implements TreeProcessorInterface {
         let prevPotentialClaimNft = '';
         let prevTx = rootTx;
         let prevOutput: ExtensionOutputData | null = null;
+        
+        if (rawtxs && rawtxs[0]) {
+            prevOutput = await parseExtensionOutputData(rootTx, 0);
+        }
+
         // For each letter of the name
         const extensionData = await parseExtensionOutputData(rootTx, 0);
         if (extensionData?.bnsConstant !== 'bns1') {
@@ -181,7 +202,8 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
         let i = 0; // The position of the next letter to get
         if (nameString === '') {
-            throw new ParameterListInsufficientSpendError();
+            // do nothing because it means we have just the BNS root
+            //  throw new ParameterListInsufficientSpendError();
         }  else {
             i = name.indexOf(nameString);
             if (i === -1) {

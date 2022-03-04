@@ -16,9 +16,8 @@ const { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, bsv, Bool, By
 
 const sighashType2Hex = s => s.toString(16)
 const API_PREFIX = process.env.NETWORK === 'mainnet' ? 'https://api.whatsonchain.com/v1/bsv/main' : 'https://api.whatsonchain.com/v1/bsv/test';
-const BNS_ROOT = '1495550c8f58cfe0b23c4f8205662eaf02978676a3a5eddc905feb23fb7024b7';
+const BNS_ROOT = 'b72470fb23eb5f90dceda5a376869702af2e6605824f3cb2e0cf588f0c559514';
 const BNS_API_URL = 'https://resolver.based.org/api/v1';
-
 const Signature = bsv.crypto.Signature;
 const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 

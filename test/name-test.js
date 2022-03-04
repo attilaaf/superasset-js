@@ -8,11 +8,11 @@ var index = require('../dist/index.js');
 var Name = require('../dist/Name.js');
 var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
 var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
-var bsv2 = require('bsv2');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
- 
+var { bsv, toHex, num2bin } = require('scryptlib');
+
 describe('Name', () => {
 
    it('#init should fail rawtx undefined', async () => {
@@ -33,8 +33,8 @@ describe('Name', () => {
       expect(name.init([rootTx], '48c9175736a7c47a4c740bd52f590ae806e8fc0dbbb653b81ea7d890f4acc969')).to.eventually.be.rejectedWith(index.ParameterExpectedRootEmptyError)
    });
    it('#init should succeed matched root', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(rootTx);
+      const expectedRoot = tx.hash;
       const name = new index.Name();
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
@@ -43,14 +43,14 @@ describe('Name', () => {
    });
    it('#init should fail root unexpected output hash', async () => {
       const name = new index.Name();
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTxExtend, 'hex'));
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(rootTxExtend);
+      const expectedRoot = tx.hash;
       expect(name.init([rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.RootOutputHashMismatchError)
    });
    it('#init should fail with no spend of letter yet', async () => {
       const name = new index.Name();
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(rootTx);
+      const expectedRoot = tx.hash;
       expect(name.init([rootTx, rootTxExtend], expectedRoot)).to.eventually.be.rejectedWith(index.ParameterListInsufficientError)
       try {
          await name.init([rootTx, rootTxExtend], expectedRoot)
@@ -60,9 +60,9 @@ describe('Name', () => {
    });
 
    it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
       const name = new index.Name();
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(rootTx);
+      const expectedRoot = tx.hash;
       await name.init([
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
@@ -71,9 +71,9 @@ describe('Name', () => {
    });
 
    it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false for BA', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const name = new index.Name();
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const expectedRoot = tx.hash;
       await name.init([
          baRoot, baRootExtend, baRootExtendB, baRootExtendBA
       ], expectedRoot);
@@ -93,9 +93,9 @@ describe('Name', () => {
    });
 
    it('#getOwner should succeed with the default unclaimed address', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
       const name = new index.Name({testnet: true});
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const expectedRoot = tx.hash;
       await name.init([
          baRoot, baRootExtend, baRootExtendB, baRootExtendBA
       ], expectedRoot);

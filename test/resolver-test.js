@@ -7,7 +7,6 @@ chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
 var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
 var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
-var bsv2 = require('bsv2');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
@@ -31,8 +30,8 @@ describe('Resolver', () => {
    });
 
    it('#getName should succeed matched root', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(rootTx, 'hex'));
-      const expectedRoot = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(rootTx);
+      const expectedRoot = tx.hash;
       const resolver = index.Resolver.create({
          root: expectedRoot,
          processGetNameTransactions: function(name, cfg) {
@@ -55,6 +54,7 @@ describe('Resolver', () => {
    });
 
    it('#getName should succeed matched default root', async () => {
+      const tx = new bsv.Transaction(rootTx);
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {
@@ -70,8 +70,8 @@ describe('Resolver', () => {
    });
 
    it('#getName should fail invalid transactions due to invalid different name', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
-      const root = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const root = tx.hash;
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {
@@ -93,8 +93,8 @@ describe('Resolver', () => {
    });
 
    it('#getName should fail due to insufficient characters', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
-      const root = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const root = tx.hash;
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {
@@ -151,8 +151,8 @@ describe('Resolver', () => {
    });
   
    it('#getName should fail incomplete transactions due to incomplete', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
-      const root = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const root = tx.hash;
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {
@@ -167,6 +167,7 @@ describe('Resolver', () => {
       try {
          await resolver.getName('ba')
       } catch (err){
+         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
@@ -184,8 +185,8 @@ describe('Resolver', () => {
       expect(false).to.be.true;
    });
    it('#BnsTx methods should succeed after #getName unsucessful due to incomplete', async () => {
-      const tx = bsv2.Tx.fromBuffer(Buffer.from(baRoot, 'hex'));
-      const root = (await tx.hash()).toString('hex');
+      const tx = new bsv.Transaction(baRoot);
+      const root = tx.hash;
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {

@@ -44,8 +44,9 @@ export class Name implements NameInterface {
         }
 
         const rootTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await rootTx.hash()).toString('hex');
+        const calculatedRoot = (await rootTx.hash()).reverse().toString('hex');
         if (expectedRoot !== calculatedRoot) {
+            console.log('expectedRoot', expectedRoot, 'calculatedRoot', calculatedRoot);
             throw new ParameterExpectedRootMismatchError();
         }
         // Make sure the first output is a BNS output of a known hash type
