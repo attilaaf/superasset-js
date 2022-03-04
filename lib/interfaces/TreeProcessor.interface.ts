@@ -5,8 +5,6 @@ export interface TreeProcessorInterface {
     // Parse rawtxs to get the prefix tree represented
     validatePrefixTree: (rawtxs: string[]) => Promise<PrefixParseResult>;
     // Get the next required transaction partial to fulfil the name
-    // Note: call multiple times to consruct the full name after each broadcast
+    // Note: call multiple times to construct the full name after each broadcast
     getRequiredTransactionPartial: (name: string, rawtxs: string[]) => Promise<RequiredTransactionPartialResult>;
-    // Attach the change output and the unlocking script 
-    // attachUnlockAndChangeOutput: (prevOutput: ExtensionOutputData, tx: bsv.Tx, txOut: bsv.TxOut) => bsv.Tx;
 }

@@ -12,7 +12,6 @@ import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { BnsTx } from "./BnsTx";
 import { BnsTxInterface } from "./interfaces/BnsTx.interface";
 
-
 function buildNFTPublicKeyHashOut(asset, pkh) {
     const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
     return script;
@@ -217,7 +216,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
         const claimNftScript = claimNftScriptSCRIPT.toHex();
         const claimOutputSatoshisInt = 300;
-        const claimOutputSatoshisHex = num2bin(claimOutputSatoshisInt, 8)
+ 
         const outputSize = '3f'; // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
         const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
         const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
@@ -228,7 +227,6 @@ export class TreeProcessor implements TreeProcessorInterface {
             claimOutputHash160,
             claimOutput,
             claimOutputSatoshisInt,
-            claimOutputSatoshisHex,
             letterOutputSatoshisInt,
             rootCharHex: 'ff',
         }

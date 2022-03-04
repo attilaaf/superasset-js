@@ -214,7 +214,6 @@ describe('Resolver', () => {
          }
          const outputSats = 300 + 800 * 38;
          expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
-      
          const bitcoinAddress = index.BitcoinAddress.fromString('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh', true);
          const utxo = {
             txid: '1a2c2f3d15b79b8c5c0c5db89b14452d451d4ca87c2cafa94392e821407e6a34',
@@ -222,7 +221,6 @@ describe('Resolver', () => {
             satoshis: 98418179,
             script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
          };
-
          const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
          
          partial.requiredBnsTx.addFundingInput(utxo);

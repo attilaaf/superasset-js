@@ -175,7 +175,7 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public addExtensionOutputs() {
-        const dividedSatoshisBytesWithSize = new Bytes(this.bnsContractConfig.claimOutputSatoshisHex + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2)); // Change to length of script 
+        const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2)); // Change to length of script 
         const lockingScriptsLevel0 = {};
         let dupHashesLevel0;
         // For the initial spend we must combine the root outpoint as part of the dedup hash
