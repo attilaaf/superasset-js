@@ -24,7 +24,7 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
     const satoshis = tx.outputs[outputIndex].satoshis;
     const txId =tx.hash
     const outputData: ExtensionOutputData = {
-        bnsConstant: script.chunks[0].buf.toString('utf8'),
+        bnsConstant: script.chunks[0].buf.toString('hex'),
         issuerPkh: script.chunks[1].buf.toString('hex'),
         claimHash: script.chunks[2].buf.toString('hex'),
         dupHash: script.chunks[3].buf.toString('hex'),

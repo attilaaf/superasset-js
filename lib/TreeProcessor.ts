@@ -158,7 +158,7 @@ export class TreeProcessor implements TreeProcessorInterface {
 
         // For each letter of the name
         const extensionData = await parseExtensionOutputData(rootTx, 0);
-        if (extensionData?.bnsConstant !== 'bns1') {
+        if (Buffer.from(extensionData?.bnsConstant || '00', 'hex').toString('utf8') !== 'bns1') {
             throw new InvalidBnsConstantError('invalid bnsConstant');
         }
         if (extensionData?.dupHash !== '0000000000000000000000000000000000000000') {

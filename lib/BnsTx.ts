@@ -74,12 +74,12 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'constructor.sighashTypeBns', sighashTypeBns.toString(16));
         }
         this.scryptBns = new this.bnsContractConfig.BNS(
-            new Bytes(this.bnsContractConfig.bnsConstant),
+            new Bytes(this.prevOutput.bnsConstant),
             new Ripemd160(this.prevOutput.issuerPkh),
-            new Ripemd160(this.bnsContractConfig.claimOutputHash160),
+            new Ripemd160(this.prevOutput.claimHash),
             new Ripemd160(this.prevOutput.dupHash),
-            this.prevOutput.currentDimension + 1,
-            new Bytes(this.bnsContractConfig.rootCharHex)
+            this.prevOutput.currentDimension,
+            new Bytes(this.prevOutput.charHex)
         );
         const asmVars = {
             'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
