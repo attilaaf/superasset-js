@@ -14,6 +14,7 @@ function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, 
     const slicedPrefix = lockingScriptASM.substring(0, 90);
     const slicedSuffix = lockingScriptASM.substring(138);
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
+    console.log('getLockingScriptForCharacter', replaced);
     return bsv.Script.fromASM(replaced);
 }
 
@@ -67,9 +68,9 @@ export class BnsTx implements BnsTxInterface {
     constructor(private bnsContractConfig: BnsContractConfig, private prevOutput: ExtensionOutputData, private tx: bsv.Transaction, private debug = false) {
         if (this.debug) {
             console.log('Debug', 'constructor.issuerPkh', this.prevOutput.issuerPkh);
-            console.log('Debug', 'constructor.claimOutputHash160', this.bnsContractConfig.claimOutputHash160);
+            console.log('Debug', 'constructor.claimHash', this.prevOutput.claimHash);
             console.log('Debug', 'constructor.dupHash', this.prevOutput.dupHash);
-            console.log('Debug', 'constructor.bnsContractConfig.rootCharHex', this.bnsContractConfig.rootCharHex);
+            console.log('Debug', 'constructor.charHex', this.prevOutput.charHex);
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
             console.log('Debug', 'constructor.sighashTypeBns', sighashTypeBns.toString(16));
         }
@@ -160,7 +161,6 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public addBnsInput(prevTx: bsv.Transaction): BnsTxInterface {
-        console.log('this.prevOutput', this.prevOutput);
         const outputIdx = this.prevOutput.outputIndex || 0
         this.tx.addInput(new bsv.Transaction.Input({
           prevTxId: prevTx.id,
@@ -172,7 +172,6 @@ export class BnsTx implements BnsTxInterface {
     }
 
     public addFundingInput(utxo: { txId: string, txid?: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
-        
         this.fundingInput = utxo;
         this.tx.addInput(new bsv.Transaction.Input({
           prevTxId: utxo.txId ? utxo.txId : utxo.txid,
@@ -199,7 +198,11 @@ export class BnsTx implements BnsTxInterface {
         const lockingScriptsLevel0 = {};
         let dupHashesLevel0;
         // For the initial spend we must combine the root outpoint as part of the dedup hash
-        const combinedDupHash = this.prevOutput.dupHash + this.prevOutput.outpointHex + this.prevOutput.charHex; // 'ff'; // The parent root node is 'ff' 
+        let combinedDupHash = this.prevOutput.dupHash + this.prevOutput.outpointHex + this.prevOutput.charHex; // 'ff'; // The parent root node is 'ff' 
+        // If it's not the root the dup hash is actually just the previous one
+        if (this.prevOutput.charHex !== 'ff') {
+            combinedDupHash = this.prevOutput.dupHash + this.prevOutput.charHex;
+        }  
         const currentDimension = this.prevOutput.currentDimension + 1;
         const dupHash = bsv.crypto.Hash.ripemd160(Buffer.from(combinedDupHash, 'hex')).toString('hex');
         
@@ -210,6 +213,7 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'addExtensionOutputs.prevOutput.outpointHex', this.prevOutput.outpointHex);
             console.log('Debug', 'addExtensionOutput.currentDimension', currentDimension);
             console.log('Debug', 'addExtensionOutput.dupHash', dupHash);
+             
         }
         let step2ExtendLockingScripts: any = [];
         for (let i = 0; i < letters.length; i++) {
@@ -221,7 +225,9 @@ export class BnsTx implements BnsTxInterface {
                 newLockingScript,
                 dupHash
             });
-
+            if (this.debug) {
+                console.log('Debug', 'addExtensionOutputs.newLockingScript.length', newLockingScript.toHex().length);
+            }
             this.tx.addOutput(
                 new bsv.Transaction.Output({
                     script: newLockingScript,
