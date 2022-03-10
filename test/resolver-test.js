@@ -200,12 +200,14 @@ describe('Resolver', () => {
       try {
          await resolver.getName('bat')
       } catch (err){
+         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
          expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('ba');
          expect(partial.nextMissingChar).to.equal('t');
+         expect(partial.nextMissingCharHex).to.equal('74');
          expect(!!partial.requiredBnsTx).to.equal(true);
          expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
          expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
@@ -231,8 +233,8 @@ describe('Resolver', () => {
          const privKey = new bsv.PrivateKey.fromWIF(key);;
          partial.requiredBnsTx.signFundingInput(privKey)
 
-         expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5370981355021868);
-         expect(partial.requiredBnsTx.getFee()).to.eql(14000);
+         expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5016866862133106);
+         expect(partial.requiredBnsTx.getFee()).to.eql(15913);
          return;
       }
       expect(false).to.be.true;

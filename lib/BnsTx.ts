@@ -14,7 +14,6 @@ function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, 
     const slicedPrefix = lockingScriptASM.substring(0, 90);
     const slicedSuffix = lockingScriptASM.substring(138);
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
-    console.log('getLockingScriptForCharacter', replaced);
     return bsv.Script.fromASM(replaced);
 }
 
@@ -89,7 +88,6 @@ export class BnsTx implements BnsTxInterface {
     }
 
     static generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
-        console.log('generatePreimage.lockingScriptASM', lockingScriptASM, satValue, sighashType)
         let preimage: any = null;
         if (isOpt) {
             for (let i = 0; ; i++) {
@@ -111,74 +109,81 @@ export class BnsTx implements BnsTxInterface {
         return preimage;
     }
 
-    public addChangeOutput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
-        const script = bsv.Script.fromASM(bitcoinAddress.toP2PKH());
-        this.tx.addOutput(
-            new bsv.Transaction.Output({
-                script,
-                satoshis: changeSatoshis
-            })
-        );
+    public addChangeOutput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
+        this.tx.change(bitcoinAddress.toString())
         return this;
     }
     
-    public unlockBnsInput(bitcoinAddress: BitcoinAddress, changeSatoshis: number): BnsTxInterface {
-        const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
-        const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
-        const changeSatoshisBytes = num2bin(changeSatoshis, 8);
-        const issuerPubKey = new Bytes('0000');
-        const issuerSig = new Bytes('0000');
-        // const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshi
-        const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2);
-        const scriptUnlock = this.scryptBns.extend(
-            preimage,
-            new Bytes(dividedSatoshisBytesWithSize),
-            new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
-            changeAddress,
-            new Bytes(changeSatoshisBytes),
-            new Bool(false),
-            issuerSig,
-            issuerPubKey).toScript();
-
-        if (this.debug) {
-            console.log('Debug', 'unlockBnsInput.preimage', preimage);
-            console.log('Debug', 'unlockBnsInput.changeSatoshisBytes', changeSatoshisBytes);
-            console.log('Debug', 'unlockBnsInput.changeAddress', changeAddress);
-            console.log('Debug', 'unlockBnsInput.claimOutput', this.bnsContractConfig.claimOutput);
-            console.log('Debug', 'unlockBnsInput.dividedSatoshisBytesWithSize', dividedSatoshisBytesWithSize);
-        }
-        
+    public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
         this.tx.setInputScript(0, (tx, output) => {
+            console.log('unlockBnsInput x', this.prevOutput.satoshis);
+            const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
+            const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
+            const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
+            const issuerPubKey = new Bytes('0000');
+            const issuerSig = new Bytes('0000');
+            // const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshi
+            const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2);
+            const scriptUnlock = this.scryptBns.extend(
+                preimage,
+                new Bytes(dividedSatoshisBytesWithSize),
+                new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
+                changeAddress,
+                new Bytes(changeSatoshisBytes),
+                new Bool(false),
+                issuerSig,
+                issuerPubKey).toScript();
+
+            if (this.debug) {
+                console.log('Debug', 'unlockBnsInput.preimage', preimage);
+                console.log('Debug', 'unlockBnsInput.changeSatoshisBytes', changeSatoshisBytes);
+                console.log('Debug', 'unlockBnsInput.changeAddress', changeAddress);
+                console.log('Debug', 'unlockBnsInput.claimOutput', this.bnsContractConfig.claimOutput);
+                console.log('Debug', 'unlockBnsInput.dividedSatoshisBytesWithSize', dividedSatoshisBytesWithSize);
+            }
+        
             return scriptUnlock;
         });
+        if (this.debug) {
+            console.log('4. unlockBns', this.tx, this.tx.toString().length / 2);
+        }
         return this;
     }
 
     public signFundingInput(privateKey: bsv.PrivateKey) {
         this.tx.sign(privateKey, Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_FORKID)
         .seal()
+
+        if (this.debug) {
+            console.log('5. signFundingInput', JSON.stringify(this.tx, null, '\n'), this.tx.toString().length / 2);
+        }
+
         return this;
     }
 
-    public addBnsInput(prevTx: bsv.Transaction): BnsTxInterface {
-        const outputIdx = this.prevOutput.outputIndex || 0
+    public addBnsInput(prevTx: bsv.Transaction, outputIndex: number): BnsTxInterface {
+        console.log('addBnsInput', outputIndex)
         this.tx.addInput(new bsv.Transaction.Input({
           prevTxId: prevTx.id,
-          outputIndex: outputIdx,
+          outputIndex: outputIndex,
           script: new bsv.Script(), // placeholder
-          output: prevTx.outputs[outputIdx]
+          output: prevTx.outputs[outputIndex]
         }));
+        if (this.debug || true) {
+            console.log('1. AddInput', outputIndex, this.tx, this.tx.toString().length / 2);
+        }
         return this.tx;
     }
 
     public addFundingInput(utxo: { txId: string, txid?: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
         this.fundingInput = utxo;
-        this.tx.addInput(new bsv.Transaction.Input({
+       /* this.tx.addInput(new bsv.Transaction.Input({
           prevTxId: utxo.txId ? utxo.txId : utxo.txid,
           outputIndex: utxo.outputIndex,
           script: new bsv.Script(),  
         }), utxo.script, utxo.satoshis);
-
+        */
+        this.tx.from(utxo);
         return this.tx;
     }
 
@@ -189,7 +194,9 @@ export class BnsTx implements BnsTxInterface {
                 satoshis: this.bnsContractConfig.claimOutputSatoshisInt,
             })
         );
-  
+        if (this.debug) {
+            console.log('2. addClaimOutput', this.tx, this.tx.toString().length / 2);
+        }
         return this.tx;
     }
 
@@ -213,12 +220,12 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'addExtensionOutputs.prevOutput.outpointHex', this.prevOutput.outpointHex);
             console.log('Debug', 'addExtensionOutput.currentDimension', currentDimension);
             console.log('Debug', 'addExtensionOutput.dupHash', dupHash);
-             
         }
         let step2ExtendLockingScripts: any = [];
         for (let i = 0; i < letters.length; i++) {
             let letter = letters[i];
             dupHashesLevel0 = dupHash;
+            console.log('currentDimension', currentDimension);
             const newLockingScript = getLockingScriptForCharacter(this.scryptBns.lockingScript.toASM(), letter, currentDimension, dupHash);
             lockingScriptsLevel0[letter] = newLockingScript;
             step2ExtendLockingScripts.push({
@@ -234,6 +241,9 @@ export class BnsTx implements BnsTxInterface {
                     satoshis: this.bnsContractConfig.letterOutputSatoshisInt,
                 })
             );
+        }
+        if (this.debug) {
+            console.log('3. addLetters', this.tx, this.tx.toString().length / 2);
         }
         return this.tx;
     }

@@ -124,7 +124,6 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
        
         if (rawtxs.length === 1) {
-            console.log('rawtxs length is 1')
             return {
                 rawtxIndexForClaim: -1,
                 nameString,
@@ -133,7 +132,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
 
         if (nameString === '') {
-            throw new ParameterListInsufficientSpendError();
+        //    throw new ParameterListInsufficientSpendError();
         }
         return {
             rawtxIndexForClaim: rawtxs.length - 1,
@@ -179,13 +178,16 @@ export class TreeProcessor implements TreeProcessorInterface {
                 throw new PrefixChainMismatchError();
             } else {
                 // Do not concat the root node, skip it
+                prevOutput = await parseExtensionOutputData(prevTx, outputIndex);
+                if (!prevOutput) {
+                    console.log('Should not happen prevOutput is null');
+                    throw new PrefixChainMismatchError();
+                }
+
                 if (i > 1) {
-                    const prevTxOut = prevTx.outputs[outputIndex];
-                    prevOutput = await parseExtensionOutputData(prevTx, outputIndex);
-                    if (!prevOutput) {
-                        console.log('Should not happen prevOutput is null');
-                        throw new PrefixChainMismatchError();
-                    }
+                    console.log('treeProcessor.i > 1', i, rawtxs.length);
+                    // const prevTxOut = prevTx.outputs[outputIndex];
+                    console.log('treeProcessor.prevOutput', prevOutput);
                     nameString += prevOutput.char; // Add the current letter that was spent
                 }
             }
@@ -207,22 +209,27 @@ export class TreeProcessor implements TreeProcessorInterface {
         }  else {
             i = name.indexOf(nameString);
             if (i === -1) {
+                console.log('treeProcessor.ParameterMissingError === -1', prevOutput, name, nameString);
                 throw new ParameterMissingError();
             }
             i = i + nameString.length;
         }
         if (prevOutput === null) {
+            console.log('treeProcessor.ParameterMissingError === null', prevOutput);
             throw new ParameterMissingError();
         } 
         const nextMissingChar = name.charAt(i);
+        const nextMissingCharHex = name.charCodeAt(i).toString(16);
+        console.log('nextMissingCharHex', name, nextMissingCharHex);
         const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, nextMissingChar);
+        const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, prevTx, rawtxs.length <= 1 ? '' : nextMissingCharHex);
         // Construct the transaction as it would need to be minus the funding input and change output
         return {
             success: false,
             prevOutput,
             bnsContractConfig,
             fulfilledName: nameString,
+            nextMissingCharHex,
             nextMissingChar,
             requiredBnsTx,
             prevTx,
@@ -238,13 +245,12 @@ export class TreeProcessor implements TreeProcessorInterface {
         const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
         const claimNftScript = claimNftScriptSCRIPT.toHex();
         const claimOutputSatoshisInt = 300;
- 
         const outputSize = num2bin(claimNftScript.length / 2, 1); // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
         const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
         const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
         return {
             BNS,
-            miningFee: 16000,
+            miningFee: 20000,
             bnsConstant,
             claimOutputHash160,
             claimOutput,
@@ -255,10 +261,19 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
     }
 
-    private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingChar: string): bsv.Tx {
+    private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, nextMissingCharHex: string): bsv.Tx {
         const tx = new bsv.Transaction();
-        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx, true);
-        bnsTx.addBnsInput(prevTx);
+        console.log('buildRequiredTx ----', prevOutput, nextMissingCharHex);
+        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx, false);
+        let letterOutputIndex = 0; // For extending the root node set to 0
+        // Otherwise it's not a root extension and we must find which to extend from
+        if (nextMissingCharHex !== '') {
+            letterOutputIndex = letters.findIndex((value) => {
+                return value === nextMissingCharHex
+            });
+        };
+        console.log('letterOutputIndex', letterOutputIndex);
+        bnsTx.addBnsInput(prevTx, letterOutputIndex); // Must skip the NFT at position 0
         bnsTx.addClaimOutput();
         bnsTx.addExtensionOutputs();
         return bnsTx;

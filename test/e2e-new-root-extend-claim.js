@@ -45,7 +45,7 @@ describe('Create new root, extend and claim bat', () => {
       const bnsOutputRipemd160 = bsv.crypto.Hash.ripemd160(tx.outputs[0].script.toBuffer()).toString('hex');
       console.log('bnsOutputRipemd160 computed', bnsOutputRipemd160);
       try {
-      do {
+         do {
             console.log('Counter', counter);
             // Now try to resolve the name 'b' from the above and see what it returns
             const resolver = index.Resolver.create({
@@ -65,34 +65,21 @@ describe('Create new root, extend and claim bat', () => {
                console.log('name', name);
                break;
             } catch (err) {
-               console.log('err', err);
+               if (!(err instanceof index.MissingNextTransactionError)) {
+                  console.log('err', err);
+               }
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
-               /* const utxo = {
-                  txid: '1a2c2f3d15b79b8c5c0c5db89b14452d451d4ca87c2cafa94392e821407e6a34',
-                  outputIndex: 39,
-                  satoshis: 98418179,
-                  script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
-               };*/
-   
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
                const utxo = utxos[0];
-               console.log('utxo', utxo);
                const outputSats = 300 + 800 * 38;
-               const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
-   
+               //const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
                partial.requiredBnsTx.addFundingInput(utxo);
-   
-               partial.requiredBnsTx.addChangeOutput(bitcoinAddress, changeSatoshis);
-   
-               partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
-   
-               partial.requiredBnsTx.signFundingInput(privateKey)
-
-               // b'2003000000000000fd850204626e733114ada084074f9a305be43e3366455db062d6d366971442a46196fbd71ee92fa0e08143942c924bb62130141297416e6c9e0dfe7204e237bebdf960bb2fa08e011501'
+               partial.requiredBnsTx.addChangeOutput(bitcoinAddress);
+               partial.requiredBnsTx.unlockBnsInput(bitcoinAddress);
+               partial.requiredBnsTx.signFundingInput(privateKey);
                const tx = partial.requiredBnsTx.getTx();
-               console.log('tx hex', tx.outputs[1].script.toHex())
                console.log(counter + ' Broadcasting...', tx.toString(), tx.outputs.length, tx, tx.hash)
                txChain.push(tx.toString());
                const result = await index.Resolver.sendTx(tx);

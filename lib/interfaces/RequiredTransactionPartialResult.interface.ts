@@ -7,6 +7,7 @@ export interface RequiredTransactionPartialResult {
     prevOutput: ExtensionOutputData;
     bnsContractConfig: BnsContractConfig;
     fulfilledName: string;
+    nextMissingCharHex: string;
     nextMissingChar: string;
     requiredBnsTx: BnsTxInterface;
     prevTx: any;
