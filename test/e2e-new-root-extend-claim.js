@@ -59,7 +59,6 @@ describe('Create new root, extend and claim bat', () => {
                debug: true,
                bnsOutputRipemd160
             });
-
             try {
                const name = await resolver.getName('ba');
                console.log('name', name);
@@ -73,8 +72,6 @@ describe('Create new root, extend and claim bat', () => {
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
                const utxo = utxos[0];
-               const outputSats = 300 + 800 * 38;
-               //const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
                partial.requiredBnsTx.addFundingInput(utxo);
                partial.requiredBnsTx.addChangeOutput(bitcoinAddress);
                partial.requiredBnsTx.unlockBnsInput(bitcoinAddress);

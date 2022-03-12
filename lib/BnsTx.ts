@@ -116,7 +116,7 @@ export class BnsTx implements BnsTxInterface {
     
     public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
         this.tx.setInputScript(0, (tx, output) => {
-            console.log('unlockBnsInput x', this.prevOutput.satoshis);
+ 
             const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
             const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
@@ -225,7 +225,7 @@ export class BnsTx implements BnsTxInterface {
         for (let i = 0; i < letters.length; i++) {
             let letter = letters[i];
             dupHashesLevel0 = dupHash;
-            console.log('currentDimension', currentDimension);
+            //console.log('currentDimension', currentDimension);
             const newLockingScript = getLockingScriptForCharacter(this.scryptBns.lockingScript.toASM(), letter, currentDimension, dupHash);
             lockingScriptsLevel0[letter] = newLockingScript;
             step2ExtendLockingScripts.push({
