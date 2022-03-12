@@ -20,9 +20,10 @@ export const intToLE = (i) => {
 
 export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
     const script = tx.outputs[outputIndex].script;
-   // console.log('tx.outputs[outputIndex]', tx.outputs[outputIndex].satoshis);
     const satoshis = tx.outputs[outputIndex].satoshis;
     const txId =tx.hash
+
+    console.log('parseExtensionOutputData', script, satoshis, txId);
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('hex'),
         issuerPkh: script.chunks[1].buf.toString('hex'),
@@ -40,3 +41,27 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
     };
     return outputData;
 };
+
+
+export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
+    const script = out.script;
+    const satoshis = out.satoshis;
+    const outputData: ExtensionOutputData = {
+        bnsConstant: script.chunks[0].buf.toString('hex'),
+        issuerPkh: script.chunks[1].buf.toString('hex'),
+        claimHash: script.chunks[2].buf.toString('hex'),
+        dupHash: script.chunks[3].buf.toString('hex'),
+        currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
+        char: script.chunks[5].buf.toString('utf8'),
+        charHex: script.chunks[5].buf.toString('hex'),
+        outpointHex: Buffer.from(txId, 'hex').reverse().toString('hex') + intToLE(outputIndex),
+        txId: txId,
+        txIdBuf: Buffer.from(txId, 'hex'),
+        script,
+        outputIndex,
+        satoshis,
+    };
+    return outputData;
+};
+
+ 

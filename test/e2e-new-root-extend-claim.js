@@ -61,7 +61,7 @@ describe('Create new root, extend and claim bat', () => {
             });
 
             try {
-               const name = await resolver.getName('alice');
+               const name = await resolver.getName('ba');
                console.log('name', name);
                break;
             } catch (err) {
