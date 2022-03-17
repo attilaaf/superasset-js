@@ -69,14 +69,27 @@ describe('Create new root, extend and claim bat', () => {
                }
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
+               const bnsContractConfig = index.BnsTx.getBnsContractConfig(partial.expectedExtensionOutput.issuerPkh);
+               let bnsTx = new index.BnsTx(bnsContractConfig, partial.expectedExtensionOutput, new bsv.Transaction(), true);
+               console.log('addBnsInput a');
+               const outputScript = partial.expectedExtensionOutput.charHex === 'ff' ? partial.tx.outputs[0] : partial.tx.outputs[partial.expectedExtensionOutput.outputIndex + 1];
+               bnsTx.addBnsInput(partial.tx.hash, partial.expectedExtensionOutput.outputIndex, outputScript); // Must skip the NFT at position 0
+               console.log('addBnsInput b');
+               bnsTx.addClaimOutput();
+               console.log('partial.expectedExtensionOutputa3');
+               bnsTx.addExtensionOutputs();
+               console.log('partial.expectedExtensionOutputa4');
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
                const utxo = utxos[0];
-               partial.requiredBnsTx.addFundingInput(utxo);
-               partial.requiredBnsTx.addChangeOutput(bitcoinAddress);
-               partial.requiredBnsTx.unlockBnsInput(bitcoinAddress);
-               partial.requiredBnsTx.signFundingInput(privateKey);
-               const tx = partial.requiredBnsTx.getTx();
+               bnsTx.addFundingInput(utxo);
+               console.log('partial.expectedExtensionOutputa5');
+               bnsTx.addChangeOutput(bitcoinAddress);
+               console.log('partial.expectedExtensionOutputa553');
+               bnsTx.unlockBnsInput(bitcoinAddress);
+               console.log('partial.expectedExtensionOutputa03');
+               bnsTx.signFundingInput(privateKey);
+               const tx = bnsTx.getTx();
                console.log(counter + ' Broadcasting...', tx.toString(), tx.outputs.length, tx, tx.hash)
                txChain.push(tx.toString());
                const result = await index.Resolver.sendTx(tx);

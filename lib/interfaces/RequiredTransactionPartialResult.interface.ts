@@ -8,12 +8,4 @@ export interface RequiredTransactionPartialResult {
     fulfilledName: string;
     lastExtensionOutput: ExtensionOutputData | null;
     expectedExtensionOutput: ExtensionOutputData | null;
-    expectedNextCharHex: string;
-   /* prevOutput: ExtensionOutputData;
-    bnsContractConfig: BnsContractConfig;
-    fulfilledName: string;
-    nextMissingCharHex: string;
-    nextMissingChar: string;
-    requiredBnsTx: BnsTxInterface;
-    prevTx: any;*/
 }

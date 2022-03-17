@@ -170,17 +170,15 @@ describe('Resolver', () => {
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
-         expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('b');
-         expect(partial.nextMissingChar).to.equal('a');
-         expect(!!partial.requiredBnsTx).to.equal(true);
-         expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
-         expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
-         for (let i = 1; i < partial.requiredBnsTx.getTx().outputs.length; i++) {
-            expect(partial.requiredBnsTx.getTx().outputs[i].satoshis).to.eql(800);
-         }
+         expect(partial.expectedExtensionOutput.charHex).to.equal('61');
+         expect(partial.expectedExtensionOutput.char).to.equal('a');
+         expect(partial.expectedExtensionOutput.outputIndex).to.equal(12);
+         expect(partial.lastExtensionOutput.char).to.equal('b');
+         expect(partial.lastExtensionOutput.outputIndex).to.equal(14);
          return;
-      }
+      };
+
       expect(false).to.be.true;
    });
    it('#BnsTx methods should succeed after #getName unsucessful due to incomplete', async () => {
@@ -200,41 +198,37 @@ describe('Resolver', () => {
       try {
          await resolver.getName('bat')
       } catch (err){
-         console.log('err', err);
+         // console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
-         expect(partial.success).to.be.false;
          expect(partial.fulfilledName).to.equal('ba');
-         expect(partial.nextMissingChar).to.equal('t');
-         expect(partial.nextMissingCharHex).to.equal('74');
-         expect(!!partial.requiredBnsTx).to.equal(true);
-         expect(partial.requiredBnsTx.getTx().outputs[0].satoshis).to.eql(300);
-         expect(partial.requiredBnsTx.getTx().outputs.length).to.equal(39);
-         for (let i = 1; i < partial.requiredBnsTx.getTx().outputs.length; i++) {
-            expect(partial.requiredBnsTx.getTx().outputs[i].satoshis).to.eql(800);
+         expect(partial.expectedExtensionOutput.char).to.equal('t');
+
+         const bnsContractConfig = index.BnsTx.getBnsContractConfig(partial.expectedExtensionOutput.issuerPkh);
+         let bnsTx = new index.BnsTx(bnsContractConfig, partial.expectedExtensionOutput, new bsv.Transaction(), true);
+         const outputScript = partial.expectedExtensionOutput.charHex === 'ff' ? partial.tx.outputs[0] : partial.tx.outputs[partial.expectedExtensionOutput.outputIndex + 1];
+         bnsTx.addBnsInput(partial.tx.hash, partial.expectedExtensionOutput.outputIndex, outputScript); // Must skip the NFT at position 0
+         bnsTx.addClaimOutput();
+         bnsTx.addExtensionOutputs();
+         const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
+         const utxo = {
+            txId: 'a906a157716c7c5007654204adf166dd9cffe87025b9c96a00af8730e1396020',
+            outputIndex: 1,
+            satoshis: 92904933,
+            script: '76a914ada084074f9a305be43e3366455db062d6d3669788ac'
+          }; 
+         bnsTx.addFundingInput(utxo);
+         bnsTx.addChangeOutput(bitcoinAddress);
+         bnsTx.unlockBnsInput(bitcoinAddress);
+         bnsTx.signFundingInput(privateKey);
+         for (let i = 1; i < bnsTx.getTx().outputs.length - 1; i++) {
+            expect(bnsTx.getTx().outputs[i].satoshis).to.eql(800);
          }
          const outputSats = 300 + 800 * 38;
-         expect(partial.requiredBnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
-         const bitcoinAddress = index.BitcoinAddress.fromString('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh', true);
-         const utxo = {
-            txid: '1a2c2f3d15b79b8c5c0c5db89b14452d451d4ca87c2cafa94392e821407e6a34',
-            outputIndex: 39,
-            satoshis: 98418179,
-            script: '76a91410bdcba3041b5e5517a58f2e405293c14a7c70c188ac'
-         };
-         const changeSatoshis = partial.prevOutput.satoshis + utxo.satoshis - outputSats - partial.bnsContractConfig.miningFee;
-         
-         partial.requiredBnsTx.addFundingInput(utxo);
-         partial.requiredBnsTx.addChangeOutput(bitcoinAddress, changeSatoshis);
-         partial.requiredBnsTx.unlockBnsInput(bitcoinAddress, changeSatoshis);
-   
-         const key = 'cPiAuukeNemjVCx76Vf6Fn5oUn7z9dPCvgY3b3H9m5hKCfE4BWvS'
-         const privKey = new bsv.PrivateKey.fromWIF(key);;
-         partial.requiredBnsTx.signFundingInput(privKey)
-
-         expect(partial.requiredBnsTx.getFeeRate()).to.eql(0.5016866862133106);
-         expect(partial.requiredBnsTx.getFee()).to.eql(15913);
+         expect(bnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
+         expect(bnsTx.getFeeRate()).to.eql(0.5);
+         expect(bnsTx.getFee()).to.eql(15913); 
          return;
       }
       expect(false).to.be.true;

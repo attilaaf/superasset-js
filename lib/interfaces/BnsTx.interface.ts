@@ -6,7 +6,7 @@ import { ExtensionOutputData } from "./ExtensionOutputData.interface";
 
 export interface BnsTxInterface { 
     
-    addBnsInput: (prevTx: bsv.Transaction, outputIndex: number) => BnsTxInterface;
+    addBnsInput: (prevTxId: string, outputIndex: number, prevScript: bsv.Script) => BnsTxInterface;
 
     addFundingInput: (utxo: { txId: string, txid?: string, outputIndex: number, script: string, satoshis: number }) => BnsTxInterface;
 

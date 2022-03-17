@@ -6,24 +6,12 @@ import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
 import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, bsv, compile, num2bin, getPreimage } from "scryptlib";
-import { bnsclaim } from "./bnsclaim_release_desc";
+
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
 import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { BnsTx } from "./BnsTx";
 import { BnsTxInterface } from "./interfaces/BnsTx.interface";
-
-function buildNFTPublicKeyHashOut(asset, pkh) {
-    const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
-    return script;
-}
-
-function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, dupHash) {
-    const slicedPrefix = lockingScriptASM.substring(0, 90);
-    const slicedSuffix = lockingScriptASM.substring(138);
-    const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
-    return bsv.Script.fromASM(replaced);
-}
-
+ 
 const Signature = bsv.crypto.Signature;
 const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const letters = [
@@ -148,28 +136,35 @@ export class TreeProcessor implements TreeProcessorInterface {
                 fulfilledName: '',
                 lastExtensionOutput: null,
                 expectedExtensionOutput: null,
-                expectedNextCharHex: ''
+ 
             }
         }
 
         if (rawtxs.length === 1) {
-            await this.validateRootTxFields(new bsv.Transaction(rawtxs[0]));
+            const tx = new bsv.Transaction(rawtxs[0]);
+            await this.validateRootTxFields(tx);
+            const expectedExtensionOutput = await parseExtensionOutputData2(tx.outputs[0], tx.hash, 0);
+            if (!expectedExtensionOutput) {
+                throw new PrefixChainMismatchError();
+            }
             return {
-                tx: rawtxs[0],
+                tx,
                 fulfilledName: '',
                 lastExtensionOutput: null,
-                expectedExtensionOutput: null,
-                expectedNextCharHex: ''
+                expectedExtensionOutput, 
+ 
             }
         }
 
         const rootTx = new bsv.Transaction(rawtxs[0]);
+        console.log('rawtxs', rawtxs.length);
         let prefixMap = {};
         prefixMap[`${rootTx.hash + '00000000'}`] = rootTx;
         let nameString = '';
+        let currTx: bsv.Transaction | null = null;
         let lastExtensionOutput: ExtensionOutputData | null = null;
         for (let i = 0; i < rawtxs.length; i++) { 
-            let currTx = new bsv.Transaction(rawtxs[i]);
+            currTx = new bsv.Transaction(rawtxs[i]);
             if (i === 0) {
                 await this.validateRootTxFields(currTx);
             } else if (i >= 1) {
@@ -186,6 +181,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 }
                 if (i > 1) {
                     nameString += lastExtensionOutput.char; // Add the current letter that was spent
+                    console.log('nameString', nameString);
                 }
                 // Clear off the map to ensure a rawtx must spend something directly of it's parent
                 prefixMap = {};
@@ -197,202 +193,35 @@ export class TreeProcessor implements TreeProcessorInterface {
                 }
             } 
         }
-        
-        
-       // const lastExtensionOutput = await this.getLastExtensionOutput(name, rawtxs);
-        const expectedExtensionOutput = await this.getExpectedExtensionOutput(name, rawtxs);
+        let missingCharIndex = 0;
+        if (nameString !== '') {
+            missingCharIndex = name.indexOf(nameString);
+            if (missingCharIndex === -1) {
+                //  console.log('treeProcessor.ParameterMissingError === -1', prevOutput, name, nameString);
+                throw new ParameterMissingError();
+            }
+            missingCharIndex = missingCharIndex + nameString.length;
+            console.log('k', missingCharIndex, nameString);
+        }
+
+        const nextMissingCharHex = name.charCodeAt(missingCharIndex).toString(16);
+        let requiredLetterOutputIndex = letters.findIndex((value) => {
+            return value === nextMissingCharHex
+        });
+        console.log('nextMissingCharHex', nextMissingCharHex, missingCharIndex, nameString);
+        const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex + 1], currTx.hash, requiredLetterOutputIndex);
+        if (!expectedExtensionOutput) {
+            throw new PrefixChainMismatchError();
+        }
         const partialResult: RequiredTransactionPartialResult ={
-            tx: bsv.Transaction,
-            fulfilledName,
+            tx: currTx,
+            fulfilledName: nameString,
             lastExtensionOutput,
-            expectedExtensionOutput,
-            expectedNextCharHex,
+            expectedExtensionOutput
         }
         return partialResult;
     }
-
-    private async getLastExtensdonOutput(name: string, rawtxs: string[]): Promise<RequiredTransactionPartialResult> {
-        const rootTx = new bsv.Transaction(rawtxs[0]);
-        const calculatedRoot = rootTx.hash;
-        let prefixMap = {};
-        prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
-        let nameString = '';
-        let prevPotentialClaimNft = '';
-        let currTx = rootTx;
-        let prevOutput: ExtensionOutputData | null = null;
-        
-        if (rawtxs && rawtxs[0]) {
-            prevOutput = await parseExtensionOutputData(rootTx, 0);
-        }
-        let isRoot = true;
-        let isRootBootstrap = false;
-        for (let i = 0; i < rawtxs.length; i++) { 
-            currTx = new bsv.Transaction(rawtxs[i]);
-            if (i === 0) {
-                await this.validateRootTxFields(currTx);
-            } else if (i >= 1) {
-                isRoot = false;
-                const { prevOutpoint, outputIndex } = prevOutpointFromTxIn(currTx.inputs[0]);
-                // Enforce that each spend in the chain spends something from before
-                if (!prefixMap[prevOutpoint]) {
-                    throw new PrefixChainMismatchError();
-                } 
-                // It is the first spend of the root; bootstrapped
-                await this.validateOutputs(currTx)
-                prevOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex);
-                if (!prevOutput) {
-                    throw new PrefixChainMismatchError();
-                }
-                if (i > 1) {
-                    nameString += prevOutput.char; // Add the current letter that was spent
-                }
-                // Clear off the map to ensure a rawtx must spend something directly of it's parent
-                prefixMap = {};
-                prevPotentialClaimNft = currTx.hash + '00000000';  
-                for (let o = 1; o < 38; o++) {  
-                    const buf = Buffer.allocUnsafe(4);
-                    buf.writeInt32LE(o);
-                    const outNumString = buf.toString('hex');
-                    prefixMap[currTx.hash + outNumString] = currTx;
-                }
-            } 
-        }
-        let missingCharIndex = 0; // The position of the next letter to get
- 
-        if (nameString !== '') {
-            missingCharIndex = name.indexOf(nameString);
-            if (missingCharIndex === -1) {
-                //  console.log('treeProcessor.ParameterMissingError === -1', prevOutput, name, nameString);
-                throw new ParameterMissingError();
-            }
-            missingCharIndex = missingCharIndex + nameString.length;
-        }
-        const nextMissingChar = name.charAt(missingCharIndex);
-        const nextMissingCharHex = name.charCodeAt(missingCharIndex).toString(16);
-        let requiredLetterOutputIndex = letters.findIndex((value) => {
-            return value === nextMissingCharHex
-        });
-        if (!isRoot) {
-            const prevFulfilledCharHex = name.charCodeAt(missingCharIndex - 1).toString(16);
-            let prevFulfilledCharOutputIndex = letters.findIndex((value) => {
-                return value === prevFulfilledCharHex
-            });
-            console.log('prevFulfilledCharOutputIndex', prevFulfilledCharOutputIndex);
-        
-            prevOutput = await parseExtensionOutputData(currTx, prevFulfilledCharOutputIndex);
-        }
-        if (prevOutput === null) {
-            throw new ParameterMissingError();
-        } 
-        const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        console.log('About to build tx -----------------------------', prevOutput,  requiredLetterOutputIndex);
-        const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, currTx, rawtxs.length <= 1 ? 0 : requiredLetterOutputIndex); 
-        const result = {
-            success: false,
-            prevOutput,
-            bnsContractConfig,
-            fulfilledName: nameString,
-            nextMissingCharHex,
-            nextMissingChar,
-            requiredBnsTx,
-            prevTx: currTx
-        };
-        console.log('result',result);
-        // Construct the transaction as it would need to be minus the funding input and change output
-        return result;
-    }
-
-    private async getLastExtensionOutput2(name: string, rawtxs: string[]): Promise<RequiredTransactionPartialResult> {
-        const rootTx = new bsv.Transaction(rawtxs[0]);
-        const calculatedRoot = rootTx.hash;
-        let prefixMap = {};
-        prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
-        let nameString = '';
-        let prevPotentialClaimNft = '';
-        let currTx = rootTx;
-        let prevOutput: ExtensionOutputData | null = null;
-        
-        if (rawtxs && rawtxs[0]) {
-            prevOutput = await parseExtensionOutputData(rootTx, 0);
-        }
-        let isRoot = true;
-        let isRootBootstrap = false;
-        for (let i = 0; i < rawtxs.length; i++) { 
-            currTx = new bsv.Transaction(rawtxs[i]);
-            if (i === 0) {
-                await this.validateRootTxFields(currTx);
-            } else if (i >= 1) {
-                isRoot = false;
-                const { prevOutpoint, outputIndex } = prevOutpointFromTxIn(currTx.inputs[0]);
-                // Enforce that each spend in the chain spends something from before
-                if (!prefixMap[prevOutpoint]) {
-                    throw new PrefixChainMismatchError();
-                } 
-                // It is the first spend of the root; bootstrapped
-                await this.validateOutputs(currTx)
-                prevOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex);
-                if (!prevOutput) {
-                    throw new PrefixChainMismatchError();
-                }
-                if (i > 1) {
-                    nameString += prevOutput.char; // Add the current letter that was spent
-                }
-                // Clear off the map to ensure a rawtx must spend something directly of it's parent
-                prefixMap = {};
-                prevPotentialClaimNft = currTx.hash + '00000000';  
-                for (let o = 1; o < 38; o++) {  
-                    const buf = Buffer.allocUnsafe(4);
-                    buf.writeInt32LE(o);
-                    const outNumString = buf.toString('hex');
-                    prefixMap[currTx.hash + outNumString] = currTx;
-                }
-            } 
-        }
-        let missingCharIndex = 0; // The position of the next letter to get
- 
-        if (nameString !== '') {
-            missingCharIndex = name.indexOf(nameString);
-            if (missingCharIndex === -1) {
-                //  console.log('treeProcessor.ParameterMissingError === -1', prevOutput, name, nameString);
-                throw new ParameterMissingError();
-            }
-            missingCharIndex = missingCharIndex + nameString.length;
-        }
-        const nextMissingChar = name.charAt(missingCharIndex);
-        const nextMissingCharHex = name.charCodeAt(missingCharIndex).toString(16);
-        let requiredLetterOutputIndex = letters.findIndex((value) => {
-            return value === nextMissingCharHex
-        });
-        if (!isRoot) {
-            const prevFulfilledCharHex = name.charCodeAt(missingCharIndex - 1).toString(16);
-            let prevFulfilledCharOutputIndex = letters.findIndex((value) => {
-                return value === prevFulfilledCharHex
-            });
-            console.log('prevFulfilledCharOutputIndex', prevFulfilledCharOutputIndex);
-        
-            prevOutput = await parseExtensionOutputData(currTx, prevFulfilledCharOutputIndex);
-        }
-        if (prevOutput === null) {
-            throw new ParameterMissingError();
-        } 
-        const bnsContractConfig: BnsContractConfig = this.getBnsContractConfig(prevOutput.issuerPkh);
-        console.log('About to build tx -----------------------------', prevOutput,  requiredLetterOutputIndex);
-        const requiredBnsTx: BnsTxInterface = this.buildRequiredTx(bnsContractConfig, prevOutput, currTx, rawtxs.length <= 1 ? 0 : requiredLetterOutputIndex); 
-        const result = {
-            success: false,
-            prevOutput,
-            bnsContractConfig,
-            fulfilledName: nameString,
-            nextMissingCharHex,
-            nextMissingChar,
-            requiredBnsTx,
-            prevTx: currTx
-        };
-        console.log('result',result);
-        // Construct the transaction as it would need to be minus the funding input and change output
-        return result;
-    }
-
+  
     private async validateRootTxFields(rawtx: any) {
         const extensionData = await parseExtensionOutputData(rawtx, 0);
         if (Buffer.from(extensionData?.bnsConstant || '00', 'hex').toString('utf8') !== 'bns1') {
@@ -431,39 +260,5 @@ export class TreeProcessor implements TreeProcessorInterface {
                 throw new InvalidCharError('invalid charHex');
             }
         }
-    }
-
-    private getBnsContractConfig(issuerPkh: string): BnsContractConfig {
-        const letterOutputSatoshisInt = 800;
-        // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
-        //const outputSize = 'fc'; // Change to fc for debug or f2 for release
-        const BNS = buildContractClass(bnsclaim());
-        const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
-        const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
-        const claimNftScript = claimNftScriptSCRIPT.toHex();
-        const claimOutputSatoshisInt = 300;
-        const outputSize = num2bin(claimNftScript.length / 2, 1); // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
-        const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
-        const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
-        return {
-            BNS,
-            miningFee: 20000,
-            bnsConstant,
-            claimOutputHash160,
-            claimOutput,
-            claimNftScript,
-            claimOutputSatoshisInt,
-            letterOutputSatoshisInt,
-            rootCharHex: 'ff',
-        }
-    }
-
-    private buildRequiredTx(bnsContractConfig: BnsContractConfig, prevOutput: ExtensionOutputData, prevTx: bsv.Transaction, letterOutputIndex: number): bsv.Tx {
-        const tx = new bsv.Transaction();
-        let bnsTx = new BnsTx(bnsContractConfig, prevOutput, tx, false);
-        bnsTx.addBnsInput(prevTx, letterOutputIndex); // Must skip the NFT at position 0
-        bnsTx.addClaimOutput();
-        bnsTx.addExtensionOutputs();
-        return bnsTx;
     }
 }
