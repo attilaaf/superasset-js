@@ -204,23 +204,16 @@ describe('Resolver', () => {
          const partial = err.requiredTransactionPartialResult;
          expect(partial.fulfilledName).to.equal('ba');
          expect(partial.expectedExtensionOutput.char).to.equal('t');
-
-         const bnsContractConfig = index.BnsTx.getBnsContractConfig(partial.expectedExtensionOutput.issuerPkh);
-         let bnsTx = new index.BnsTx(bnsContractConfig, partial.expectedExtensionOutput, new bsv.Transaction(), true);
-         const outputScript = partial.expectedExtensionOutput.charHex === 'ff' ? partial.tx.outputs[0] : partial.tx.outputs[partial.expectedExtensionOutput.outputIndex + 1];
-         bnsTx.addBnsInput(partial.tx.hash, partial.expectedExtensionOutput.outputIndex, outputScript); // Must skip the NFT at position 0
-         bnsTx.addClaimOutput();
-         bnsTx.addExtensionOutputs();
+         let bnsTx = new index.BnsTx(partial.expectedExtensionOutput);
          const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
          const utxo = {
             txId: 'a906a157716c7c5007654204adf166dd9cffe87025b9c96a00af8730e1396020',
             outputIndex: 1,
             satoshis: 92904933,
             script: '76a914ada084074f9a305be43e3366455db062d6d3669788ac'
-          }; 
+         }; 
          bnsTx.addFundingInput(utxo);
          bnsTx.addChangeOutput(bitcoinAddress);
-         bnsTx.unlockBnsInput(bitcoinAddress);
          bnsTx.signFundingInput(privateKey);
          for (let i = 1; i < bnsTx.getTx().outputs.length - 1; i++) {
             expect(bnsTx.getTx().outputs[i].satoshis).to.eql(800);

@@ -193,6 +193,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 }
             } 
         }
+
         let missingCharIndex = 0;
         if (nameString !== '') {
             missingCharIndex = name.indexOf(nameString);

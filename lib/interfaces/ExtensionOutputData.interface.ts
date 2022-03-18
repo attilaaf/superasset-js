@@ -1,3 +1,5 @@
+import * as bsv from 'bsv';
+
 export interface ExtensionOutputData { 
     outpointHex: string;
     txId: string;
@@ -12,4 +14,5 @@ export interface ExtensionOutputData {
     charHex: string;
     script: any;
     satoshis: number;
+    tx: bsv.Transaction;
 }

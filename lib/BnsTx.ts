@@ -65,7 +65,8 @@ const letters = [
 export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
     private scryptBns: any;
-    constructor(private bnsContractConfig: BnsContractConfig, private prevOutput: ExtensionOutputData, private tx: bsv.Transaction, private debug = false) {
+    private bnsContractConfig: any;
+    constructor(private prevOutput: ExtensionOutputData, private debug = false, private tx: bsv.Transaction = new bsv.Transaction() ) {
         if (this.debug) {
             console.log('Debug', 'constructor.issuerPkh', this.prevOutput.issuerPkh);
             console.log('Debug', 'constructor.claimHash', this.prevOutput.claimHash);
@@ -74,6 +75,7 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
             console.log('Debug', 'constructor.sighashTypeBns', sighashTypeBns.toString(16));
         }
+        this.bnsContractConfig = BnsTx.getBnsContractConfig(prevOutput.issuerPkh);
         this.scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.prevOutput.bnsConstant),
             new Ripemd160(this.prevOutput.issuerPkh),
@@ -86,6 +88,11 @@ export class BnsTx implements BnsTxInterface {
             'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
         };
         this.scryptBns.replaceAsmVars(asmVars);
+        // If it's the root tx, then we know we must extend from the 0'th output
+        // Otherwise me extend from the letter (after the NFT in 0'th position, hence the + 1)
+        const outputScript = this.prevOutput.charHex === 'ff' ? this.prevOutput.tx.outputs[0] : this.prevOutput.tx.outputs[this.prevOutput.outputIndex + 1];
+        this.addBnsInput(this.prevOutput.txId, this.prevOutput.outputIndex, outputScript); // Must skip the NFT at position 0   
+        this.addBnsOutputs();
     }
 
     static getBnsContractConfig(issuerPkh: string): BnsContractConfig {
@@ -135,16 +142,11 @@ export class BnsTx implements BnsTxInterface {
         return preimage;
     }
 
-    public addChangeOutput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
-        this.tx.change(bitcoinAddress.toString())
-        return this;
-    }
-
-    public unlockBnsInput(bitcoinAddress: BitcoinAddress): BnsTxInterface {
+    public addChangeOutput(changeAddress: BitcoinAddress): BnsTxInterface {
+        this.tx.change(changeAddress.toString());
         this.tx.setInputScript(0, (tx, output) => {
-
             const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
-            const changeAddress = new Bytes(bitcoinAddress.toHash160Bytes());
+            const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
             const issuerPubKey = new Bytes('0000');
             const issuerSig = new Bytes('0000');
@@ -154,7 +156,7 @@ export class BnsTx implements BnsTxInterface {
                 preimage,
                 new Bytes(dividedSatoshisBytesWithSize),
                 new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
-                changeAddress,
+                changeAddressHash160,
                 new Bytes(changeSatoshisBytes),
                 new Bool(false),
                 issuerSig,
@@ -163,7 +165,7 @@ export class BnsTx implements BnsTxInterface {
             if (this.debug) {
                 console.log('Debug', 'unlockBnsInput.preimage', preimage);
                 console.log('Debug', 'unlockBnsInput.changeSatoshisBytes', changeSatoshisBytes);
-                console.log('Debug', 'unlockBnsInput.changeAddress', changeAddress);
+                console.log('Debug', 'unlockBnsInput.changeAddressHash160', changeAddressHash160);
                 console.log('Debug', 'unlockBnsInput.claimOutput', this.bnsContractConfig.claimOutput);
                 console.log('Debug', 'unlockBnsInput.dividedSatoshisBytesWithSize', dividedSatoshisBytesWithSize);
             }
@@ -187,7 +189,7 @@ export class BnsTx implements BnsTxInterface {
         return this;
     }
 
-    public addBnsInput(prevTxId: string, outputIndex: number, prevScript: bsv.Script): BnsTxInterface {
+    private addBnsInput(prevTxId: string, outputIndex: number, prevScript: bsv.Script): BnsTxInterface {
         console.log('addBnsInput', prevTxId, prevScript, outputIndex)
         this.tx.addInput(new bsv.Transaction.Input({
             // prevTxId: prevTx.id,
@@ -213,8 +215,8 @@ export class BnsTx implements BnsTxInterface {
         this.tx.from(utxo);
         return this.tx;
     }
-
-    public addClaimOutput(): bsv.Transaction {
+    private addBnsOutputs() {
+        // Add the claim output
         this.tx.addOutput(
             new bsv.Transaction.Output({
                 script: bsv.Script.fromHex(this.bnsContractConfig.claimNftScript),
@@ -224,11 +226,8 @@ export class BnsTx implements BnsTxInterface {
         if (this.debug) {
             console.log('2. addClaimOutput', this.tx, this.tx.toString().length / 2);
         }
-        return this.tx;
-    }
+        // Add the extension outputs
 
-    public addExtensionOutputs() {
-        //const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2)); // Change to length of script 
         const lockingScriptsLevel0 = {};
         let dupHashesLevel0;
         // For the initial spend we must combine the root outpoint as part of the dedup hash

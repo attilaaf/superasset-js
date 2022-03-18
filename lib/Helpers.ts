@@ -21,7 +21,7 @@ export const intToLE = (i) => {
 export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
     const script = tx.outputs[outputIndex].script;
     const satoshis = tx.outputs[outputIndex].satoshis;
-    const txId =tx.hash
+    const txId = tx.hash
 
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('hex'),
@@ -37,6 +37,7 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
         script,
         outputIndex,
         satoshis,
+        tx
     };
     return outputData;
 };
@@ -59,6 +60,7 @@ export const parseExtensionOutputData2 = async (out: any, txId: string, outputIn
         script,
         outputIndex,
         satoshis,
+        tx
     };
     return outputData;
 };
