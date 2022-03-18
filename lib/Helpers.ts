@@ -43,7 +43,7 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
 };
 
 
-export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
+export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number, tx: bsv.Transaction): Promise<ExtensionOutputData | null> =>  {
     const script = out.script;
     const satoshis = out.satoshis;
     const outputData: ExtensionOutputData = {

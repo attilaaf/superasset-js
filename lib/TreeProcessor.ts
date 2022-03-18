@@ -143,7 +143,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (rawtxs.length === 1) {
             const tx = new bsv.Transaction(rawtxs[0]);
             await this.validateRootTxFields(tx);
-            const expectedExtensionOutput = await parseExtensionOutputData2(tx.outputs[0], tx.hash, 0);
+            const expectedExtensionOutput = await parseExtensionOutputData2(tx.outputs[0], tx.hash, 0, tx);
             if (!expectedExtensionOutput) {
                 throw new PrefixChainMismatchError();
             }
@@ -175,7 +175,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 } 
                 // It is the first spend of the root; bootstrapped
                 await this.validateOutputs(currTx)
-                lastExtensionOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex);
+                lastExtensionOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex, currTx);
                 if (!lastExtensionOutput) {
                     throw new PrefixChainMismatchError();
                 }
@@ -210,7 +210,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             return value === nextMissingCharHex
         });
         console.log('nextMissingCharHex', nextMissingCharHex, missingCharIndex, nameString);
-        const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex + 1], currTx.hash, requiredLetterOutputIndex);
+        const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex + 1], currTx.hash, requiredLetterOutputIndex, currTx);
         if (!expectedExtensionOutput) {
             throw new PrefixChainMismatchError();
         }
