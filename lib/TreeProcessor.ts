@@ -209,8 +209,9 @@ export class TreeProcessor implements TreeProcessorInterface {
         let requiredLetterOutputIndex = letters.findIndex((value) => {
             return value === nextMissingCharHex
         });
+        requiredLetterOutputIndex++;
         console.log('nextMissingCharHex', nextMissingCharHex, missingCharIndex, nameString);
-        const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex + 1], currTx.hash, requiredLetterOutputIndex, currTx);
+        const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex], currTx.hash, requiredLetterOutputIndex, currTx);
         if (!expectedExtensionOutput) {
             throw new PrefixChainMismatchError();
         }

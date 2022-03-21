@@ -60,7 +60,7 @@ describe('Create new root, extend and claim bat', () => {
                bnsOutputRipemd160
             });
             try {
-               const name = await resolver.getName('ba');
+               const name = await resolver.getName('based');
                console.log('name', name);
                break;
             } catch (err) {
@@ -69,7 +69,8 @@ describe('Create new root, extend and claim bat', () => {
                }
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
-               let bnsTx = new index.BnsTx(partial.expectedExtensionOutput);
+               console.log('partial.expectedExtensionOutput', partial.expectedExtensionOutput) 
+               let bnsTx = new index.BnsTx(partial.expectedExtensionOutput, true);
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
                const utxo = utxos[0];
@@ -80,7 +81,7 @@ describe('Create new root, extend and claim bat', () => {
                console.log(counter + ' Broadcasting...', bitcoinAddress.toString(), utxo, tx.toString(), tx.outputs.length, tx, tx.hash)
                txChain.push(tx.toString());
                const result = await index.Resolver.sendTx(tx);
-               console.log('Broadcasted tx...', result, tx.hash, ) 
+               console.log('Broadcasted tx...', partial, partial.fulfilledName, result, tx.hash) 
             }
             counter++;
             console.log('sleeping...') 

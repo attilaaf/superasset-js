@@ -148,8 +148,8 @@ export class BnsTx implements BnsTxInterface {
             const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
             const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
-            const issuerPubKey = new Bytes('0000');
-            const issuerSig = new Bytes('0000');
+            const issuerPubKey = new Bytes('00');
+            const issuerSig = new Bytes('00');
             // const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshi
             const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2);
             const scriptUnlock = this.scryptBns.extend(
@@ -182,6 +182,7 @@ export class BnsTx implements BnsTxInterface {
         this.tx.sign(privateKey, Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_FORKID)
             .seal()
 
+        
         if (this.debug) {
             console.log('5. signFundingInput', JSON.stringify(this.tx, null, '\n'), this.tx.toString().length / 2);
         }
