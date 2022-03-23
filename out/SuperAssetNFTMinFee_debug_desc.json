@@ -1,0 +1,196 @@
+{
+    "version": 8,
+    "compilerVersion": "1.9.1+commit.aebe0f4",
+    "contract": "SuperAssetNFTMinFee",
+    "md5": "04a94791158520d4460409308c87fe4e",
+    "structs": [],
+    "library": [],
+    "alias": [
+        {
+            "name": "PubKeyHash",
+            "type": "Ripemd160"
+        }
+    ],
+    "abi": [
+        {
+            "type": "function",
+            "name": "unlock",
+            "index": 0,
+            "params": [
+                {
+                    "name": "txPreimage",
+                    "type": "SigHashPreimage"
+                },
+                {
+                    "name": "outputSatsWithSize",
+                    "type": "bytes"
+                },
+                {
+                    "name": "receiveAddressWithSize",
+                    "type": "bytes"
+                },
+                {
+                    "name": "senderSig",
+                    "type": "Sig"
+                },
+                {
+                    "name": "unlockKey",
+                    "type": "PubKey"
+                },
+                {
+                    "name": "nameNFT",
+                    "type": "bytes"
+                },
+                {
+                    "name": "feeBurner",
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "type": "constructor",
+            "params": [
+                {
+                    "name": "assetid",
+                    "type": "bytes"
+                },
+                {
+                    "name": "pubKeyHash",
+                    "type": "Ripemd160"
+                },
+                {
+                    "name": "nameOutputHash160",
+                    "type": "bytes"
+                },
+                {
+                    "name": "feeOutputHash160",
+                    "type": "bytes"
+                }
+            ]
+        }
+    ],
+    "stateProps": [],
+    "buildType": "debug",
+    "file": "file:///Users/morgoth/git/based-js/lib/contracts/SuperAssetNFTMinFee.scrypt",
+    "asm": "$assetid $pubKeyHash $nameOutputHash160 $feeOutputHash160 OP_6 OP_PICK OP_HASH160 OP_3 OP_PICK OP_EQUAL OP_VERIFY OP_7 OP_PICK OP_7 OP_PICK OP_CHECKSIG OP_VERIFY OP_1 OP_PICK OP_6 OP_PICK OP_RIPEMD160 OP_EQUAL OP_VERIFY OP_0 OP_PICK OP_5 OP_PICK OP_RIPEMD160 OP_EQUAL OP_VERIFY OP_9 OP_PICK OP_4 OP_PICK OP_0 24 OP_NUM2BIN OP_EQUAL OP_IF OP_11 OP_PICK 68 OP_SPLIT OP_DROP 44 OP_SPLIT OP_NIP OP_ELSE OP_4 OP_PICK OP_ENDIF OP_CAT OP_9 OP_PICK OP_CAT OP_6 OP_PICK OP_CAT OP_5 OP_PICK OP_CAT OP_HASH256 OP_11 OP_PICK OP_12 OP_PICK OP_SIZE OP_NIP OP_8 OP_SUB OP_SPLIT OP_DROP OP_12 OP_PICK OP_SIZE OP_NIP 28 OP_SUB OP_SPLIT OP_NIP OP_EQUAL OP_VERIFY OP_10 OP_PICK OP_NOP OP_HASH256 OP_1 OP_SPLIT OP_SWAP OP_BIN2NUM OP_1ADD OP_SWAP OP_CAT 3044022079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980220 OP_SWAP OP_CAT $Tx.checkPreimageOpt_.sigHashType OP_CAT 02b405d7f0322a89d0f9f3a98e6f938fdc1c969a8d1382a2bf66a71ae74a1e83b0 OP_CHECKSIG OP_NOP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP OP_NIP",
+    "hex": "<assetid><pubKeyHash><nameOutputHash160><feeOutputHash160>5679a95379876957795779ac6951795679a6876900795579a68769597954790001248087635b7901687f7501447f77675479687e59797e56797e55797eaa5b795c79827758947f755c7982770128947f7787695a7961aa517f7c818b7c7e263044022079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802207c7e<Tx.checkPreimageOpt_.sigHashType>7e2102b405d7f0322a89d0f9f3a98e6f938fdc1c969a8d1382a2bf66a71ae74a1e83b0ac617777777777777777777777",
+    "sources": [
+        "/Users/morgoth/git/based-js/lib/contracts/SuperAssetNFTMinFee.scrypt",
+        "std"
+    ],
+    "sourceMap": [
+        "0:63:5:63:18",
+        "0:64:5:64:25",
+        "0:65:5:65:28",
+        "0:66:5:66:27",
+        "0:83:25:83:34",
+        "0:83:25:83:34",
+        "0:83:17:83:35",
+        "0:83:39:83:54",
+        "0:83:39:83:54",
+        "0:83:17:83:54",
+        "0:83:9:83:56",
+        "0:84:26:84:35",
+        "0:84:26:84:35",
+        "0:84:37:84:46",
+        "0:84:37:84:46",
+        "0:84:17:84:47",
+        "0:84:9:84:49",
+        "0:85:17:85:39",
+        "0:85:17:85:39",
+        "0:85:53:85:60",
+        "0:85:53:85:60",
+        "0:85:43:85:61",
+        "0:85:17:85:61",
+        "0:85:9:85:63",
+        "0:86:17:86:38",
+        "0:86:17:86:38",
+        "0:86:52:86:61",
+        "0:86:52:86:61",
+        "0:86:42:86:62",
+        "0:86:17:86:62",
+        "0:86:9:86:64",
+        "0:91:17:91:35",
+        "0:91:17:91:35",
+        "0:95:18:95:30",
+        "0:95:18:95:30",
+        "0:95:42:95:43",
+        "0:95:45:95:47",
+        "0:95:34:95:48",
+        "0:95:18:95:48",
+        "0:95:18:95:88",
+        "0:95:51:95:61",
+        "0:95:51:95:61",
+        "0:95:68:95:71",
+        "0:95:51:95:73",
+        "0:95:51:95:73",
+        "0:95:63:95:65",
+        "0:95:51:95:73",
+        "0:95:51:95:73",
+        "0:95:18:95:88",
+        "0:95:76:95:88",
+        "0:95:76:95:88",
+        "0:95:18:95:88",
+        "0:91:17:95:89",
+        "0:96:17:96:39",
+        "0:96:17:96:39",
+        "0:91:17:96:39",
+        "0:97:17:97:24",
+        "0:97:17:97:24",
+        "0:91:17:97:24",
+        "0:98:17:98:26",
+        "0:98:17:98:26",
+        "0:91:17:98:26",
+        "0:89:13:99:14",
+        "0:101:13:101:23",
+        "0:101:13:101:23",
+        "0:101:51:101:61",
+        "0:101:51:101:61",
+        "0:101:47:101:62",
+        "0:101:47:101:62",
+        "0:101:65:101:66",
+        "0:101:47:101:66",
+        "0:101:13:101:67",
+        "0:101:13:101:67",
+        "0:101:28:101:38",
+        "0:101:28:101:38",
+        "0:101:24:101:39",
+        "0:101:24:101:39",
+        "0:101:42:101:44",
+        "0:101:24:101:44",
+        "0:101:13:101:67",
+        "0:101:13:101:67",
+        "0:89:13:101:67",
+        "0:88:9:102:11",
+        "0:104:38:104:48",
+        "0:104:38:104:48",
+        "0:104:17:104:49#Tx.checkPreimageOpt_:0#Tx",
+        "1:391:13:391:23",
+        "1:391:24:391:28",
+        "1:391:29:391:37",
+        "1:391:38:391:45",
+        "1:391:46:391:56",
+        "1:391:57:391:64",
+        "1:391:65:391:72",
+        "1:391:73:391:79",
+        "1:392:13:392:89",
+        "1:393:13:393:20",
+        "1:393:21:393:27",
+        "1:394:13:394:25",
+        "1:395:13:395:19",
+        "1:396:13:396:79",
+        "1:397:13:397:24",
+        "0:104:17:104:49#Tx.checkPreimageOpt_:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1",
+        "-1:1:1:1:1"
+    ]
+}

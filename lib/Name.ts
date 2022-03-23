@@ -15,9 +15,11 @@ import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 
 export class Name implements NameInterface { 
-    private initialized = false;
-    private nameString = '';
-    private nameInfo: NameInfo | null = null;
+    private initialized = false;                // Whether it is initialized
+    private nameString = '';                    // Name string this name object represents
+    private nameInfo: NameInfo | null = null;   // Name record information 
+    private nftPtr: string | null = null;       // The NFT pointer
+
     public isClaimed = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
@@ -60,6 +62,7 @@ export class Name implements NameInterface {
         this.nameString = result.nameString;
         this.initialized = true;
     }
+
     private async validateBuildRecords(rawtxs: string[]) {
         const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')
@@ -126,30 +129,16 @@ export class Name implements NameInterface {
         return this.nameInfo;
     }
 
-    public async setRecord(type: string, name: string, value: string, ttl?: number): Promise<OpResult> {
+    public async updateRecords(records: Array<{type: string, name: string, value: string, ttl?: number}>): Promise<OpResult> {
         this.ensureInit();
         return {
             success: false
         }
     }
-
-    public async deleteRecord(type: string, name: string): Promise<OpResult>{
-        this.ensureInit();
-        return {
-            success: false
-        }
-    }
-
-    public async getAddress(coinId: string): Promise<string> {
+ 
+    public async getAddress(coinSymbol: string): Promise<string> {
         this.ensureInit();
         return '';
-    }
-
-    public async setAddress(coinId: string, address: string): Promise<OpResult> {
-        this.ensureInit();
-        return {
-            success: false
-        }
     }
 
     private ensureInit() {

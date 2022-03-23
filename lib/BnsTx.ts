@@ -3,8 +3,15 @@ import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface'
 import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage, bsv } from 'scryptlib';
 import { BitcoinAddress } from '.';
 import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
-import { bnsclaim } from "./bnsclaim_release_desc";
+import { SuperAssetBNS } from './contracts/SuperAssetBNS';
+import { SuperAssetFeeBurner } from './contracts/SuperAssetFeeBurner';
+import { SuperAssetNFT } from './contracts/SuperAssetNFT';
+import { sighashType2Hex } from './Helpers';
+import { SuperAssetNFTMinFee } from './contracts/SuperAssetNFTMinFee';
 
+const Signature = bsv.crypto.Signature;
+const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
+const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const MSB_THRESHOLD = 0x7e;
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
@@ -17,9 +24,6 @@ function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, 
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
     return bsv.Script.fromASM(replaced);
 }
-
-const Signature = bsv.crypto.Signature;
-const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const letters = [
     '2d',
     '5f',
@@ -66,16 +70,17 @@ export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
     private scryptBns: any;
     private bnsContractConfig: any;
-    constructor(private prevOutput: ExtensionOutputData, private debug = false, private tx: bsv.Transaction = new bsv.Transaction() ) {
+    constructor(private prevOutput: ExtensionOutputData, private debug = false, private tx: bsv.Transaction = new bsv.Transaction()) {
         if (this.debug) {
             console.log('Debug', 'constructor.issuerPkh', this.prevOutput.issuerPkh);
             console.log('Debug', 'constructor.claimHash', this.prevOutput.claimHash);
             console.log('Debug', 'constructor.dupHash', this.prevOutput.dupHash);
             console.log('Debug', 'constructor.charHex', this.prevOutput.charHex);
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
-            console.log('Debug', 'constructor.sighashTypeBns', sighashTypeBns.toString(16));
+            console.log('Debug', 'constructor.sighashTypeBns', sighashTypeAll.toString(16));
         }
-        this.bnsContractConfig = BnsTx.getBnsContractConfig(prevOutput.issuerPkh);
+        this.bnsContractConfig = BnsTx.getBnsContractConfig(prevOutput.claimHash);
+        console.log('bnsContractConfig', this.bnsContractConfig);
         this.scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.prevOutput.bnsConstant),
             new Ripemd160(this.prevOutput.issuerPkh),
@@ -85,7 +90,7 @@ export class BnsTx implements BnsTxInterface {
             new Bytes(this.prevOutput.charHex)
         );
         const asmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashTypeBns.toString(16),
+            'Tx.checkPreimageOpt_.sigHashType': sighashTypeAll.toString(16),
         };
         this.scryptBns.replaceAsmVars(asmVars);
         // If it's the root tx, then we know we must extend from the 0'th output
@@ -95,26 +100,85 @@ export class BnsTx implements BnsTxInterface {
         this.addBnsOutputs();
     }
 
-    static getBnsContractConfig(issuerPkh: string): BnsContractConfig {
+    static getClaimNFT(claimPkh: string) {
+        const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(BnsTx.getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
+        // Only hash the part after the parameters (last one is the pkh)
+        const lockingScriptHashedPart = BnsTx.getNameNFT(claimPkh).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
+        const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPart, 'hex')).toString('hex');
+        // Attach the minimal fee contract to the BNS contract
+        const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
+        const superAssetNFTMinFee = new SuperAssetNFTMinFeeClass(
+            new Bytes('000000000000000000000000000000000000000000000000000000000000000000000000'),
+            new Ripemd160(toHex(claimPkh)),
+            new Bytes(nameOutputHash160),
+            new Bytes(feeOutputHash160)
+        );
+        console.log('getclaim NFT 4');
+        const asmVarsMinFee = {
+            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
+        };
+        superAssetNFTMinFee.replaceAsmVars(asmVarsMinFee);
+        return superAssetNFTMinFee;
+    }
+
+    static getClaimNFTOutput(claimPkh: string) {
+        const claimNftScript = BnsTx.getClaimNFT(claimPkh).lockingScript;
+        const claimNftScriptHex = claimNftScript.toHex();
+        const claimSatoshisInt = 300;
+        const claimSatoshisWithFullOutput = num2bin(claimSatoshisInt, 8) + 'fd' + num2bin(claimNftScriptHex.length / 2, 2) + claimNftScriptHex;
+        return {
+            hex: claimSatoshisWithFullOutput,
+            satoshis: claimSatoshisInt,
+            script: claimNftScript,
+            hash: bsv.crypto.Hash.ripemd160(Buffer.from(claimSatoshisWithFullOutput, 'hex')).toString('hex')
+        };
+    }
+
+    static getFeeBurner() {
+        // Generate the fee burner contract
+        // The feeOutputHash160 is for the entire script
+        const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
+        const superAssetFeeBurner = new SuperAssetFeeBurnerClass();
+        const superAssetFeeBurnerAsmVars = {
+            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
+        };
+        superAssetFeeBurner.replaceAsmVars(superAssetFeeBurnerAsmVars);
+        return superAssetFeeBurner;
+    }
+
+    static getNameNFT(claimPkh: string) {
+        // Generate the regular nft contract
+        // The nameOutputHash160 is for the part of the contract after the assetId and the p2pkh address
+        const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
+        console.log('getNameNFT 1a', claimPkh)
+        const superAssetNFT = new SuperAssetNFTClass(
+            new Bytes('000000000000000000000000000000000000000000000000000000000000000000000000'),
+            new Ripemd160(toHex(claimPkh)),
+        );
+        const superAssetNFTAsmVars = {
+            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeSingle)
+        };
+        console.log('getNameNFT 1')
+        superAssetNFT.replaceAsmVars(superAssetNFTAsmVars);
+        console.log('getNameNFT 1s')
+        return superAssetNFT; //console.log('superAssetNFT.lockingScript', superAssetNFT.lockingScript, superAssetNFT.lockingScript.toHex());
+    }
+
+    static getBnsContractConfig(claimPkh: string): BnsContractConfig {
         const letterOutputSatoshisInt = 800;
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
-        const BNS = buildContractClass(bnsclaim());
+        const BNS = buildContractClass(SuperAssetBNS(true));
         const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
-        const claimNftScriptSCRIPT = buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
-        const claimNftScript = claimNftScriptSCRIPT.toHex();
-        const claimOutputSatoshisInt = 300;
-        const outputSize = num2bin(claimNftScript.length / 2, 1); // SANFT: 'f2' for release' and 'fc' for debug or P2NFTPKH: 3f (63 bytes)
-        const claimOutput = num2bin(claimOutputSatoshisInt, 8) + outputSize + claimNftScript;
-        const claimOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(claimOutput, 'hex')).toString('hex');  
+        const claimOutput = BnsTx.getClaimNFTOutput(claimPkh);
         return {
             BNS,
             miningFee: 20000,
             bnsConstant,
-            claimOutputHash160,
-            claimOutput,
-            claimNftScript,
-            claimOutputSatoshisInt,
+            claimOutputHash160: claimOutput.hash,
+            claimOutput: claimOutput.hex,
+            claimNftScript: claimOutput.script.toHex(),
+            claimOutputSatoshisInt: claimOutput.satoshis,
             letterOutputSatoshisInt,
             rootCharHex: 'ff',
         }
@@ -129,7 +193,7 @@ export class BnsTx implements BnsTxInterface {
                 const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
                 let preimageHex = toHex(preimage_);
                 preimage = preimage_;
-                const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex'));// bsv2.Hash.sha256Sha256(Buffer.from(preimageHex, 'hex'));
+                const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex')); 
                 const msb = h.readUInt8();
                 if (msb < MSB_THRESHOLD) {
                     // the resulting MSB of sighash must be less than the threshold
@@ -145,7 +209,7 @@ export class BnsTx implements BnsTxInterface {
     public addChangeOutput(changeAddress: BitcoinAddress): BnsTxInterface {
         this.tx.change(changeAddress.toString());
         this.tx.setInputScript(0, (tx, output) => {
-            const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeBns);
+            const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeAll);
             const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
             const issuerPubKey = new Bytes('00');
@@ -155,7 +219,7 @@ export class BnsTx implements BnsTxInterface {
             const scriptUnlock = this.scryptBns.extend(
                 preimage,
                 new Bytes(dividedSatoshisBytesWithSize),
-                new Bytes(this.bnsContractConfig.claimOutput), // Todo: check if this is the full output
+                new Bytes(this.bnsContractConfig.claimOutput), 
                 changeAddressHash160,
                 new Bytes(changeSatoshisBytes),
                 new Bool(false),
@@ -172,26 +236,16 @@ export class BnsTx implements BnsTxInterface {
 
             return scriptUnlock;
         });
-        if (this.debug) {
-            console.log('4. unlockBns', this.tx, this.tx.toString().length / 2);
-        }
         return this;
     }
 
     public signFundingInput(privateKey: bsv.PrivateKey) {
         this.tx.sign(privateKey, Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_FORKID)
             .seal()
-
-        
-        if (this.debug) {
-            console.log('5. signFundingInput', JSON.stringify(this.tx, null, '\n'), this.tx.toString().length / 2);
-        }
-
         return this;
     }
 
     private addBnsInput(prevTxId: string, outputIndex: number, prevScript: bsv.Script): BnsTxInterface {
-        console.log('addBnsInput', prevTxId, prevScript, outputIndex)
         this.tx.addInput(new bsv.Transaction.Input({
             // prevTxId: prevTx.id,
             prevTxId,
@@ -199,20 +253,11 @@ export class BnsTx implements BnsTxInterface {
             script: new bsv.Script(), // placeholder
             output: prevScript, // prevTx.outputs[outputIndex]
         }));
-        if (this.debug || true) {
-            console.log('1. AddInput', outputIndex, this.tx, this.tx.toString().length / 2);
-        }
         return this.tx;
     }
 
     public addFundingInput(utxo: { txId: string, txid?: string, outputIndex: number, script: string, satoshis: number }): BnsTxInterface {
         this.fundingInput = utxo;
-        /* this.tx.addInput(new bsv.Transaction.Input({
-           prevTxId: utxo.txId ? utxo.txId : utxo.txid,
-           outputIndex: utxo.outputIndex,
-           script: new bsv.Script(),  
-         }), utxo.script, utxo.satoshis);
-         */
         this.tx.from(utxo);
         return this.tx;
     }
@@ -224,9 +269,6 @@ export class BnsTx implements BnsTxInterface {
                 satoshis: this.bnsContractConfig.claimOutputSatoshisInt,
             })
         );
-        if (this.debug) {
-            console.log('2. addClaimOutput', this.tx, this.tx.toString().length / 2);
-        }
         // Add the extension outputs
 
         const lockingScriptsLevel0 = {};
@@ -259,18 +301,12 @@ export class BnsTx implements BnsTxInterface {
                 newLockingScript,
                 dupHash
             });
-            if (this.debug) {
-                console.log('Debug', 'addExtensionOutputs.newLockingScript.length', newLockingScript.toHex().length);
-            }
             this.tx.addOutput(
                 new bsv.Transaction.Output({
                     script: newLockingScript,
                     satoshis: this.bnsContractConfig.letterOutputSatoshisInt,
                 })
             );
-        }
-        if (this.debug) {
-            console.log('3. addLetters', this.tx, this.tx.toString().length / 2);
         }
         return this.tx;
     }

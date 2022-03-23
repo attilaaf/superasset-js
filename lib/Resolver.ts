@@ -4,14 +4,14 @@ import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 import { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 import { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
-import { InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
+import { BnsTx, InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { bsv } from 'scryptlib';
 import * as axios from 'axios';
-import { bnsclaim } from "./bnsclaim_release_desc";
+import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 const { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, bsv, Bool, Bytes, compile, num2bin, getPreimage } = require('scryptlib');
 
 const sighashType2Hex = s => s.toString(16)
@@ -80,18 +80,15 @@ export class Resolver implements ResolverInterface {
         return script;
     }
 
-    static generateBnsRoot(issuerPkh: string, claimNftScriptHex: string, outputSize = '3f') {
+    static generateBnsRoot(issuerPkh: string, claimPkh: string) {
         const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
-        const claimSatoshisInt = 300;
-        const claimSatoshisWithFullOutput = num2bin(claimSatoshisInt, 8) + outputSize + claimNftScriptHex;
-        const claimNftHash = bsv.crypto.Hash.ripemd160(Buffer.from(claimSatoshisWithFullOutput, 'hex')).toString('hex');
         let prevDupHash = '0000000000000000000000000000000000000000';
         let currentDimension = 20;
-        const BNS = buildContractClass(bnsclaim());
+        const BNS = buildContractClass(SuperAssetBNS(true));
         const tree = new BNS(
             new Bytes(bnsConstant),
             new Ripemd160(issuerPkh),
-            new Ripemd160(claimNftHash),
+            new Ripemd160(BnsTx.getClaimNFTOutput(claimPkh).hash),
             new Ripemd160(prevDupHash),
             currentDimension,
             new Bytes('ff')

@@ -2,7 +2,8 @@
 var chai = require('chai');
 var expect = require('chai').expect;
 var chaiAsPromised = require('chai-as-promised');
-
+const { buildContractClass, Bytes, Ripemd160 } = require('scryptlib');
+const sighashType2Hex = s => s.toString(16)
 chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
 var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
@@ -18,22 +19,15 @@ const sleeper = async (seconds) => {
       }, seconds * 1000);
    })
 }
+const Signature = bsv.crypto.Signature;
+
 describe('Create new root, extend and claim bat', () => {
    it('e2e run', async () => {
- 
       const publicKey = privateKey.publicKey;
       const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
- 
       const issuerPkh = toHex(publicKeyHash);
- 
-      const claimNftScript = index.Resolver.buildNFTPublicKeyHashOut(num2bin(0, 36), issuerPkh);
- 
-      const claimNftScriptHex = claimNftScript.toHex();
- 
-      const rootOutput = index.Resolver.generateBnsRoot(issuerPkh, claimNftScriptHex, '3f');
- 
-      // b'2003000000000000fd850204626e733114ada084074f9a305be43e3366455db062d6d366971442a46196fbd71ee92fa0e08143942c924bb62130 14 4bbf3d0d3b6d4bd4bdc00af0ba2854e0ab4788fd 011501'
-      // expect(rootOutput.toHex()).to.eq('04626e733114ada084074f9a305be43e3366455db062d6d366971442a46196fbd71ee92fa0e08143942c924bb62130140000000000000000000000000000000000000000011401ff587964780154a1696f7501149c63765f7901687f7501447f777e77685d79547e57797e01147e56797e01147e55797e01147e78607902b3007f7502b2007f777ea67e517e53798b51807e517e5f79016b011179016b7f7501697f7701007e81937f7502b3007f7756795f79a6885e7952797e012d7e787e52797e015f7e787e52797e01307e787e52797e01317e787e52797e01327e787e52797e01337e787e52797e01347e787e52797e01357e787e52797e01367e787e52797e01377e787e52797e01387e787e52797e01397e787e52797e01617e787e52797e01627e787e52797e01637e787e52797e01647e787e52797e01657e787e52797e01667e787e52797e01677e787e52797e01687e787e52797e01697e787e52797e016a7e787e52797e016b7e787e52797e016c7e787e52797e016d7e787e52797e016e7e787e52797e016f7e787e52797e01707e787e52797e01717e787e52797e01727e787e52797e01737e787e52797e01747e787e52797e01757e787e52797e01767e787e52797e01777e787e52797e01787e787e52797e01797e787e52797e017a7e787e5d797e041976a9147e5e797e0288ac7eaa011179011279827758947f7501127982770128947f77886d75675679a955798857795779ad685d79aa517f7c818b7c7e263044022079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802207c7e01c17e2102b405d7f0322a89d0f9f3a98e6f938fdc1c969a8d1382a2bf66a71ae74a1e83b0ac7777777777777777777777777777')
+      const claimPkh = toHex(publicKeyHash);;
+      const rootOutput = index.Resolver.generateBnsRoot(issuerPkh, claimPkh);
       console.log('About to deploy...', rootOutput.toASM(), rootOutput.toHex());
       const tx = await index.Resolver.deployRoot(privateKey, rootOutput, 10000);
       const testRoot = tx.hash;
@@ -57,11 +51,35 @@ describe('Create new root, extend and claim bat', () => {
                },
                root: testRoot,
                debug: true,
-               bnsOutputRipemd160
+               bnsOutputRipemd160,
+               testnet: true,
             });
             try {
-               const name = await resolver.getName('based');
+               const name = await resolver.getName('a');
                console.log('name', name);
+               // Now that we have the name, claim it.
+               expect(!name.isClaimed).to.be.true;
+               // const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
+               const result = await name.claim(privateKey, true); // By default
+               // Expect the rawtx signed to be returned. Backend also broadcasts it
+               console.log('result', result);
+
+               // Add crypto currency addresses
+               await name.update([
+                  { type: 'address', name: 'btc', value: 'myaddress1', op: 0 } // op is optional. 0 means set and 1 means delete
+               ]);
+
+               await name.update([
+                  { type: 'address', name: 'btc', value: 'myaddressupdated', op: 0 },
+                  { type: 'address', name: 'bsv', value: 'bsvaddress', op: 0 },
+                  { type: 'address', name: 'ltc', value: 'ltcaddress', op: 0 },
+                  { type: 'cname', name: '', value: 'https://based.org', op: 0 }
+               ]);
+
+               await name.update([
+                  { type: 'address', name: 'ltc', op: 1 },
+               ]);
+
                break;
             } catch (err) {
                if (!(err instanceof index.MissingNextTransactionError)) {
@@ -87,10 +105,10 @@ describe('Create new root, extend and claim bat', () => {
             console.log('sleeping...') 
             await sleeper(5);
          } while (true);
+
       } catch (ex) {
          console.log('Exception Wrapper', ex);
          expect(false).to.be.true;
       }
-     // done();
    });
 });

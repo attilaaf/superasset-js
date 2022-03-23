@@ -19,7 +19,11 @@ export { MissingNextTransactionError } from "./errors/MissingNextTransactionErro
 export { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 export { NotInitError } from "./errors/NotInitError";
 export { NFTChainError } from "./errors/NFTChainError";
-export { bnsclaim } from "./bnsclaim_release_desc";
+export { SuperAssetBNS } from "./contracts/SuperAssetBNS";
+export { SuperAssetNFT } from "./contracts/SuperAssetNFT";
+export { SuperAssetNFTMinFee } from "./contracts/SuperAssetNFTMinFee";
+export { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
+
 export {
   InvalidBnsConstantError,
   InvalidCurrentDimensionError,
