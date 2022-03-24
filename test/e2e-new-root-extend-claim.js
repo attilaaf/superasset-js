@@ -88,7 +88,7 @@ describe('Create new root, extend and claim bat', () => {
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
                console.log('partial.expectedExtensionOutput', partial.expectedExtensionOutput) 
-               let bnsTx = new index.BnsTx(partial.expectedExtensionOutput, true);
+               let bnsTx = new index.BnsTx(partial.expectedExtensionOutput, claimPkh, true);
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
                const utxo = utxos[0];

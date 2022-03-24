@@ -182,6 +182,10 @@ describe('Resolver', () => {
       expect(false).to.be.true;
    });
    it('#BnsTx methods should succeed after #getName unsucessful due to incomplete', async () => {
+      const publicKey = privateKey.publicKey;
+      const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
+      const claimPkh = toHex(publicKeyHash);;
+
       const tx = new bsv.Transaction(baRoot);
       const root = tx.hash;
       const resolver = index.Resolver.create({
@@ -204,7 +208,7 @@ describe('Resolver', () => {
          const partial = err.requiredTransactionPartialResult;
          expect(partial.fulfilledName).to.equal('ba');
          expect(partial.expectedExtensionOutput.char).to.equal('t');
-         let bnsTx = new index.BnsTx(partial.expectedExtensionOutput);
+         let bnsTx = new index.BnsTx(partial.expectedExtensionOutput, claimPkh);
          const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
          const utxo = {
             txId: 'a906a157716c7c5007654204adf166dd9cffe87025b9c96a00af8730e1396020',

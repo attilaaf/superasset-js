@@ -70,7 +70,12 @@ export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
     private scryptBns: any;
     private bnsContractConfig: any;
-    constructor(private prevOutput: ExtensionOutputData, private debug = false, private tx: bsv.Transaction = new bsv.Transaction()) {
+    constructor(
+        private prevOutput: ExtensionOutputData, 
+        private claimPkh: string,
+        private debug = false, 
+        private tx: bsv.Transaction = new bsv.Transaction()
+    ) {
         if (this.debug) {
             console.log('Debug', 'constructor.issuerPkh', this.prevOutput.issuerPkh);
             console.log('Debug', 'constructor.claimHash', this.prevOutput.claimHash);
@@ -79,7 +84,7 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
             console.log('Debug', 'constructor.sighashTypeBns', sighashTypeAll.toString(16));
         }
-        this.bnsContractConfig = BnsTx.getBnsContractConfig(prevOutput.claimHash);
+        this.bnsContractConfig = BnsTx.getBnsContractConfig(claimPkh);
         console.log('bnsContractConfig', this.bnsContractConfig);
         this.scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.prevOutput.bnsConstant),
