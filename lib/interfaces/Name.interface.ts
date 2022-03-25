@@ -16,7 +16,7 @@ export interface NameInterface {
     // The root of this name tree
     getRoot: () => string;
     // If it is not claimed, then claim it for the private key
-    claim: (privateKey: string) => boolean;
+    claim: (privateKey: string) => Promise<boolean>;
     // Whether there was a spend of the claim tx
     isClaimed: () => boolean;
     // The root of this name tree

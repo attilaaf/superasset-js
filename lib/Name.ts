@@ -5,6 +5,7 @@ import { ParameterMissingError } from "./errors/ParameterMissingError";
 import { NameInterface } from "./interfaces/Name.interface";
 import { OpResult } from "./interfaces/OpResult.interface";
 import * as bsv2 from 'bsv2';
+import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
@@ -13,13 +14,15 @@ import { prevOutpointFromTxIn } from "./Helpers";
 import { NameInfo } from "./interfaces/NameInfo.interface";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
+import { Resolver } from "./Resolver";
+ 
 
 export class Name implements NameInterface { 
     private initialized = false;                // Whether it is initialized
     private nameString = '';                    // Name string this name object represents
     private nameInfo: NameInfo | null = null;   // Name record information 
     private nftPtr: string | null = null;       // The NFT pointer
-
+    private claimTx: string | null = null;      // Claim tx for the name token
     public isClaimNFTSpent = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
@@ -69,6 +72,7 @@ export class Name implements NameInterface {
         const assetId = assetTxId + '00000000';
         let prefixMap = {};
         prefixMap[`${assetId}`] = mintTx;
+        this.claimTx = mintTx;
         let prevTx = mintTx;
         let address;
         if (this.opts?.testnet) {
@@ -97,15 +101,23 @@ export class Name implements NameInterface {
         }
     }
 
-    public claim(privateKey: string): boolean {
+    private callbackSignClaimInput(tx: bsv.Transaction, inputIndex: number): boolean {
+        
+        return true;
+    }
+
+    public async claim(key: string, callback = this.callbackSignClaimInput): Promise<boolean> {
         this.ensureInit();
         if (this.isClaimed()) {
             throw new Error('Name already claimed')
         }
+        const privateKey = new bsv.PrivateKey.fromWIF(key);
         // Get a UTXO to create the claim TX, require at least 10,000 satoshis.
-
+        const bitcoinAddress = new BitcoinAddress(privateKey.toAddress());
+        const utxos = await Resolver.fetchUtxos(bitcoinAddress.toString());
         
         // Construct the claim transaction which includes the name token and a fee burner token
+
 
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
 
