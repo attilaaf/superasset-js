@@ -118,7 +118,7 @@ export class BnsTx implements BnsTxInterface {
             new Bytes(nameOutputHash160),
             new Bytes(feeOutputHash160)
         );
-        console.log('getclaim NFT 4');
+ 
         const asmVarsMinFee = {
             'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
         };
@@ -155,7 +155,6 @@ export class BnsTx implements BnsTxInterface {
         // Generate the regular nft contract
         // The nameOutputHash160 is for the part of the contract after the assetId and the p2pkh address
         const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
-        console.log('getNameNFT 1a', claimPkh)
         const superAssetNFT = new SuperAssetNFTClass(
             new Bytes('000000000000000000000000000000000000000000000000000000000000000000000000'),
             new Ripemd160(toHex(claimPkh)),
@@ -163,10 +162,10 @@ export class BnsTx implements BnsTxInterface {
         const superAssetNFTAsmVars = {
             'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeSingle)
         };
-        console.log('getNameNFT 1')
+ 
         superAssetNFT.replaceAsmVars(superAssetNFTAsmVars);
-        console.log('getNameNFT 1s')
-        return superAssetNFT; //console.log('superAssetNFT.lockingScript', superAssetNFT.lockingScript, superAssetNFT.lockingScript.toHex());
+ 
+        return superAssetNFT;  
     }
 
     static getBnsContractConfig(claimPkh: string): BnsContractConfig {
@@ -299,7 +298,6 @@ export class BnsTx implements BnsTxInterface {
         for (let i = 0; i < letters.length; i++) {
             let letter = letters[i];
             dupHashesLevel0 = dupHash;
-            //console.log('currentDimension', currentDimension);
             const newLockingScript = getLockingScriptForCharacter(this.scryptBns.lockingScript.toASM(), letter, currentDimension, dupHash);
             lockingScriptsLevel0[letter] = newLockingScript;
             step2ExtendLockingScripts.push({

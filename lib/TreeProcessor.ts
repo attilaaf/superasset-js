@@ -198,11 +198,9 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (nameString !== '') {
             missingCharIndex = name.indexOf(nameString);
             if (missingCharIndex === -1) {
-                //  console.log('treeProcessor.ParameterMissingError === -1', prevOutput, name, nameString);
                 throw new ParameterMissingError();
             }
             missingCharIndex = missingCharIndex + nameString.length;
-            console.log('k', missingCharIndex, nameString);
         }
 
         const nextMissingCharHex = name.charCodeAt(missingCharIndex).toString(16);
@@ -210,7 +208,6 @@ export class TreeProcessor implements TreeProcessorInterface {
             return value === nextMissingCharHex
         });
         requiredLetterOutputIndex++;
-        console.log('nextMissingCharHex', nextMissingCharHex, missingCharIndex, nameString);
         const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex], currTx.hash, requiredLetterOutputIndex, currTx);
         if (!expectedExtensionOutput) {
             throw new PrefixChainMismatchError();

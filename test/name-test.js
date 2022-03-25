@@ -59,7 +59,7 @@ describe('Name', () => {
       }
    });
 
-   it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false', async () => {
+   it('#getNameString should succeed with unclaimed branch is set isClaimed as false', async () => {
       const name = new index.Name();
       const tx = new bsv.Transaction(rootTx);
       const expectedRoot = tx.hash;
@@ -67,10 +67,10 @@ describe('Name', () => {
          rootTx, rootTxExtend, rootTxExtendA
       ], expectedRoot);
       expect(name.getNameString()).to.eql('b');
-      expect(name.isClaimSpent()).to.eql(false);
+      expect(name.isClaimed()).to.eql(false);
    });
 
-   it('#getNameString should succeed with unclaimed branch is set isClaimSpent as false for BA', async () => {
+   it('#getNameString should succeed with unclaimed branch is set isClaimed as false for BA', async () => {
       const name = new index.Name();
       const tx = new bsv.Transaction(baRoot);
       const expectedRoot = tx.hash;
@@ -78,7 +78,7 @@ describe('Name', () => {
          baRoot, baRootExtend, baRootExtendB, baRootExtendBA
       ], expectedRoot);
       expect(name.getNameString()).to.eql('ba');
-      expect(name.isClaimSpent()).to.eql(false);
+      expect(name.isClaimed()).to.eql(false);
    });
 
    it('#getNameString should fail throw NotInitError', async () => {
@@ -100,7 +100,7 @@ describe('Name', () => {
          baRoot, baRootExtend, baRootExtendB, baRootExtendBA
       ], expectedRoot);
       expect(name.getNameString()).to.eql('ba');
-      expect(name.isClaimSpent()).to.eql(false);
+      expect(name.isClaimed()).to.eql(false);
       expect(name.getOwner().toString()).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
    });
 });

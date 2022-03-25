@@ -19,8 +19,6 @@ const sleeper = async (seconds) => {
       }, seconds * 1000);
    })
 }
-const Signature = bsv.crypto.Signature;
-
 describe('Create new root, extend and claim bat', () => {
    it('e2e run', async () => {
       const publicKey = privateKey.publicKey;
@@ -28,19 +26,16 @@ describe('Create new root, extend and claim bat', () => {
       const issuerPkh = toHex(publicKeyHash);
       const claimPkh = toHex(publicKeyHash);;
       const rootOutput = index.Resolver.generateBnsRoot(issuerPkh, claimPkh);
-      console.log('About to deploy...', rootOutput.toASM(), rootOutput.toHex());
+      console.log('About to deploy BNS Root...', rootOutput.toASM(), rootOutput.toHex());
       const tx = await index.Resolver.deployRoot(privateKey, rootOutput, 10000);
       const testRoot = tx.hash;
-      console.log('Deployed tx: ', tx, tx.toString(), testRoot);
+      console.log('Deployed tx: ', tx.toString());
       await sleeper(5);
       const txChain = [ tx.toString() ];
       let counter = 0;
-      // Update the bnsOutputRipemd160 
       const bnsOutputRipemd160 = bsv.crypto.Hash.ripemd160(tx.outputs[0].script.toBuffer()).toString('hex');
-      console.log('bnsOutputRipemd160 computed', bnsOutputRipemd160);
       try {
          do {
-            console.log('Counter', counter);
             // Now try to resolve the name 'b' from the above and see what it returns
             const resolver = index.Resolver.create({
                processGetNameTransactions: function (name, cfg) {
@@ -55,15 +50,13 @@ describe('Create new root, extend and claim bat', () => {
                testnet: true,
             });
             try {
-               const name = await resolver.getName('a');
-               console.log('name', name);
+               const name = await resolver.getName('bat');
+               console.log('Checking for name: ', name);
                // Now that we have the name, claim it.
-               expect(!name.isClaimed).to.be.true;
+               expect(name.isClaimed()).to.be.false;
                // const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const result = await name.claim(privateKey, true); // By default
                // Expect the rawtx signed to be returned. Backend also broadcasts it
-               console.log('result', result);
-
                // Add crypto currency addresses
                await name.update([
                   { type: 'address', name: 'btc', value: 'myaddress1', op: 0 } // op is optional. 0 means set and 1 means delete
@@ -83,11 +76,10 @@ describe('Create new root, extend and claim bat', () => {
                break;
             } catch (err) {
                if (!(err instanceof index.MissingNextTransactionError)) {
-                  console.log('err', err);
+                  console.log('Unexpected exception caught', err);
                }
                expect(err instanceof index.MissingNextTransactionError).to.be.true;
                const partial = err.requiredTransactionPartialResult;
-               console.log('partial.expectedExtensionOutput', partial.expectedExtensionOutput) 
                let bnsTx = new index.BnsTx(partial.expectedExtensionOutput, claimPkh, true);
                const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const utxos = await index.Resolver.fetchUtxos(bitcoinAddress.toString());
@@ -96,18 +88,18 @@ describe('Create new root, extend and claim bat', () => {
                bnsTx.addChangeOutput(bitcoinAddress);
                bnsTx.signFundingInput(privateKey);
                const tx = bnsTx.getTx();
-               console.log(counter + ' Broadcasting...', bitcoinAddress.toString(), utxo, tx.toString(), tx.outputs.length, tx, tx.hash)
+               console.log(counter + ' Broadcasting...', tx.toString(), tx.hash)
                txChain.push(tx.toString());
-               const result = await index.Resolver.sendTx(tx);
-               console.log('Broadcasted tx...', partial, partial.fulfilledName, result, tx.hash) 
+               await index.Resolver.sendTx(tx);
+               console.log('Broadcasted tx...', tx.hash) 
             }
             counter++;
-            console.log('sleeping...') 
+            console.log('sleeping 5 seconds ...') 
             await sleeper(5);
          } while (true);
 
       } catch (ex) {
-         console.log('Exception Wrapper', ex);
+         console.log('-----Exception Caught-----', ex);
          expect(false).to.be.true;
       }
    });

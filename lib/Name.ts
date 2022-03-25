@@ -20,7 +20,7 @@ export class Name implements NameInterface {
     private nameInfo: NameInfo | null = null;   // Name record information 
     private nftPtr: string | null = null;       // The NFT pointer
 
-    public isClaimed = false;
+    public isClaimNFTSpent = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
     public expectedRoot: string = '';
@@ -92,14 +92,29 @@ export class Name implements NameInterface {
             prefixMap = {};
             prefixMap[txId + '00000000'] = true;
             prevTx = tx;
-            this.isClaimed = true; // There was at least one spend therefore it is claimed
+            this.isClaimNFTSpent = true; // There was at least one spend therefore it is claimed
             this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
         }
     }
 
-    public isClaimSpent(): boolean {
+    public claim(privateKey: string): boolean {
         this.ensureInit();
-        return this.isClaimed;
+        if (this.isClaimed()) {
+            throw new Error('Name already claimed')
+        }
+        // Get a UTXO to create the claim TX, require at least 10,000 satoshis.
+
+        
+        // Construct the claim transaction which includes the name token and a fee burner token
+
+        // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
+
+        return true;
+    }
+
+    public isClaimed(): boolean {
+        this.ensureInit();
+        return this.isClaimNFTSpent;
     }
 
     public getRoot(): string {

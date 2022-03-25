@@ -25,8 +25,6 @@ const privateKey2 = new bsv.PrivateKey.fromWIF(key2)
 
 const privateKey3 = new bsv.PrivateKey.fromWIF(key3)
 
-//console.log('' + privateKey.toAddress())
-
 module.exports = {
   privateKey,
   privateKey2,

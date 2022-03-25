@@ -15,8 +15,10 @@ export interface NameInterface {
     updateRecords: (records: Array<{ type: string, name: string, value: string, op?: number, ttl?: number}>) => Promise<OpResult>;
     // The root of this name tree
     getRoot: () => string;
+    // If it is not claimed, then claim it for the private key
+    claim: (privateKey: string) => boolean;
     // Whether there was a spend of the claim tx
-    isClaimSpent: () => boolean;
+    isClaimed: () => boolean;
     // The root of this name tree
     getNameString: () => string;
     // Helpers that use getRecords and setRecord underneath...
