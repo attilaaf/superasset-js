@@ -10,11 +10,13 @@ import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRo
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
-import { prevOutpointFromTxIn } from "./Helpers";
+import { generatePreimage, prevOutpointFromTxIn, sighashType2Hex } from "./Helpers";
 import { NameInfo } from "./interfaces/NameInfo.interface";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 import { Resolver } from "./Resolver";
+import { Bool, buildContractClass, Bytes, num2bin, PubKey, Ripemd160, signTx, toHex } from "scryptlib/dist";
+import { SuperAssetNFTMinFee } from "./contracts/SuperAssetNFTMinFee";
  
 
 export class Name implements NameInterface { 
@@ -106,21 +108,81 @@ export class Name implements NameInterface {
         return true;
     }
 
-    public async claim(key: string, callback = this.callbackSignClaimInput): Promise<boolean> {
+    public async claim(key: string | bsv.PrivateKey, callback = this.callbackSignClaimInput): Promise<boolean> {
         this.ensureInit();
         if (this.isClaimed()) {
             throw new Error('Name already claimed')
         }
-        const privateKey = new bsv.PrivateKey.fromWIF(key);
+        let privateKey = key;
+        if (typeof key === 'string' || key instanceof String) {
+            privateKey = new bsv.PrivateKey.fromWIF(key);
+        }
         // Get a UTXO to create the claim TX, require at least 10,000 satoshis.
         const bitcoinAddress = new BitcoinAddress(privateKey.toAddress());
         const utxos = await Resolver.fetchUtxos(bitcoinAddress.toString());
-        
+        console.log('utxos for claim', utxos);
         // Construct the claim transaction which includes the name token and a fee burner token
+        // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
+        const outputSize = 'f2'; // Change to fc for debug or f2 for release
+        const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee()); 
+        const publicKey = privateKey.publicKey
+        const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
+        const Signature = bsv.crypto.Signature;
+        const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+        const claimTxObject = new bsv.Transaction(this.claimTx);
+        const nft = new SuperAssetNFTMinFeeClass(
+            new Bytes(claimTxObject.hash + '00000000'), 
+            new Ripemd160(toHex(publicKeyHash)));
+        const asmVars = {
+            'Tx.checkPreimageOpt_.sigHashType': 
+            sighashType2Hex(sighashTypeSingle)
+        };  
+        nft.replaceAsmVars(asmVars);
 
+        function buildMetadataOpReturn(someData = '') {
+            return bsv.Script.fromASM(`OP_FALSE OP_RETURN ${Buffer.from(someData, 'utf8').toString('hex')}`);
+          }
+
+        // Add claim as input
+        const transferTx = new bsv.Transaction();
+        transferTx.addInput(new bsv.Transaction.Input({
+            claimTxObject: claimTxObject.hash,
+            outputIndex: 0,
+            script: new bsv.Script(), // placeholder
+            output: claimTxObject.outputs[0].script, // prevTx.outputs[outputIndex]
+        }));
+        transferTx.setOutput(0, (tx) => {
+            return new bsv.Transaction.Output({
+                script: nft.lockingScript,
+                satoshis: claimTxObject.outputs[0].satoshis,
+            });
+        })
+        // Optionally include any number of outputs
+        .setOutput(1, (tx) => {
+            const deployData = buildMetadataOpReturn('claimed')
+            return new bsv.Transaction.Output({
+                script: deployData,
+                satoshis: 0,
+            }) 
+        })
+        .setInputScript(0, (tx, output) => {
+            const preimage = generatePreimage(true, tx, nft.lockingScript, output.satoshis, sighashTypeSingle);
+            // Update prev locking script
+            const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
+            console.log('preimage', preimage);
+            console.log('output.script', output.script.toASM());
+            console.log('output.satoshis', output.satoshis);
+            console.log('outputSatsWithSize', outputSatsWithSize);
+            console.log('isTransform', new Bool(false));
+            console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
+            console.log('unlock pubKey', new PubKey(toHex(publicKey)));
+            const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeSingle);
+            console.log('sig', sig);
+            return nft.unlock(preimage, outputSatsWithSize, new Bytes('14' + privateKey.toAddress().toHex().substring(2)), new Bool(false), sig, new PubKey(toHex(publicKey))).toScript()
+        })
+        .seal()
 
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
-
         return true;
     }
 

@@ -10,7 +10,7 @@ var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-samp
 var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
-var { privateKey } = require('../privateKey');
+var { privateKey, privateKeyStr } = require('../privateKey');
 var { bsv, toHex, num2bin } = require('scryptlib');
 const sleeper = async (seconds) => {
    return new Promise((resolve) => {
@@ -55,7 +55,7 @@ describe('Create new root, extend and claim bat', () => {
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
                // const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
-               const result = await name.claim(privateKey, true); // By default
+               const result = await name.claim(privateKeyStr, true); // By default
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
                await name.update([

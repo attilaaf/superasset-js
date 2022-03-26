@@ -1,8 +1,11 @@
 import * as bsv from 'bsv';
+import { toHex } from 'scryptlib/dist';
 import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
+import { getPreimage } from 'scryptlib';
 
 export const sighashType2Hex = s => s.toString(16)
  
+const MSB_THRESHOLD = 0x7e;
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.prevTxId.toString('hex');
     const outputIndex = txIn.outputIndex;
@@ -17,6 +20,30 @@ export const intToLE = (i) => {
     buf.writeInt32LE(i);
     return buf.toString('hex');
 }
+
+
+export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
+    let preimage: any = null;
+    if (isOpt) {
+        for (let i = 0; ; i++) {
+            // malleate tx and thus sighash to satisfy constraint
+            txLegacy.nLockTime = i;
+            const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
+            let preimageHex = toHex(preimage_);
+            preimage = preimage_;
+            const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex')); 
+            const msb = h.readUInt8();
+            if (msb < MSB_THRESHOLD) {
+                // the resulting MSB of sighash must be less than the threshold
+                break;
+            }
+        }
+    } else {
+        preimage = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
+    }
+    return preimage;
+}
+
 
 export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
     const script = tx.outputs[outputIndex].script;

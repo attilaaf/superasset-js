@@ -6,13 +6,12 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 import { SuperAssetBNS } from './contracts/SuperAssetBNS';
 import { SuperAssetFeeBurner } from './contracts/SuperAssetFeeBurner';
 import { SuperAssetNFT } from './contracts/SuperAssetNFT';
-import { sighashType2Hex } from './Helpers';
+import { generatePreimage, sighashType2Hex } from './Helpers';
 import { SuperAssetNFTMinFee } from './contracts/SuperAssetNFTMinFee';
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
 const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
-const MSB_THRESHOLD = 0x7e;
 
 function buildNFTPublicKeyHashOut(asset, pkh) {
     const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
@@ -188,32 +187,10 @@ export class BnsTx implements BnsTxInterface {
         }
     }
 
-    static generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
-        let preimage: any = null;
-        if (isOpt) {
-            for (let i = 0; ; i++) {
-                // malleate tx and thus sighash to satisfy constraint
-                txLegacy.nLockTime = i;
-                const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
-                let preimageHex = toHex(preimage_);
-                preimage = preimage_;
-                const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex')); 
-                const msb = h.readUInt8();
-                if (msb < MSB_THRESHOLD) {
-                    // the resulting MSB of sighash must be less than the threshold
-                    break;
-                }
-            }
-        } else {
-            preimage = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
-        }
-        return preimage;
-    }
-
     public addChangeOutput(changeAddress: BitcoinAddress): BnsTxInterface {
         this.tx.change(changeAddress.toString());
         this.tx.setInputScript(0, (tx, output) => {
-            const preimage = BnsTx.generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeAll);
+            const preimage = generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeAll);
             const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
             const issuerPubKey = new Bytes('00');

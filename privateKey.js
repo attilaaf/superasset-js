@@ -27,6 +27,7 @@ const privateKey3 = new bsv.PrivateKey.fromWIF(key3)
 
 module.exports = {
   privateKey,
+  privateKeyStr: key,
   privateKey2,
   privateKey3,
   genPrivKey
