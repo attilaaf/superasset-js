@@ -12,6 +12,7 @@ import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { bsv } from 'scryptlib';
 import * as axios from 'axios';
 import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
+import { getClaimNFTOutput } from "./contracts/ContractBuilder";
 const { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, bsv, Bool, Bytes, compile, num2bin, getPreimage } = require('scryptlib');
 
 const sighashType2Hex = s => s.toString(16)
@@ -88,7 +89,7 @@ export class Resolver implements ResolverInterface {
         const tree = new BNS(
             new Bytes(bnsConstant),
             new Ripemd160(issuerPkh),
-            new Ripemd160(BnsTx.getClaimNFTOutput(claimPkh).hash),
+            new Ripemd160(getClaimNFTOutput(claimPkh).hash),
             new Ripemd160(prevDupHash),
             currentDimension,
             new Bytes('ff')

@@ -54,7 +54,6 @@ describe('Create new root, extend and claim bat', () => {
                console.log('Checking for name: ', name);
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
-               // const bitcoinAddress = new index.BitcoinAddress(privateKey.toAddress());
                const result = await name.claim(privateKeyStr, true); // By default
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses

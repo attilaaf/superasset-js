@@ -17,14 +17,17 @@ import { TreeProcessor } from "./TreeProcessor";
 import { Resolver } from "./Resolver";
 import { Bool, buildContractClass, Bytes, num2bin, PubKey, Ripemd160, signTx, toHex } from "scryptlib/dist";
 import { SuperAssetNFTMinFee } from "./contracts/SuperAssetNFTMinFee";
- 
+import { SigningService } from "./SigningService";
+import { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
+import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 
-export class Name implements NameInterface { 
+export class Name implements NameInterface {
     private initialized = false;                // Whether it is initialized
     private nameString = '';                    // Name string this name object represents
     private nameInfo: NameInfo | null = null;   // Name record information 
     private nftPtr: string | null = null;       // The NFT pointer
     private claimTx: string | null = null;      // Claim tx for the name token
+    private rootTx: any | null = null;        // Root tx for BNS
     public isClaimNFTSpent = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
@@ -50,13 +53,17 @@ export class Name implements NameInterface {
             throw new ParameterExpectedRootEmptyError();
         }
 
-        const rootTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const calculatedRoot = (await rootTx.hash()).reverse().toString('hex');
+        this.rootTx = new bsv.Transaction(rawtxs[0]);
+        if (!this.rootTx) {
+            throw new ParameterExpectedRootEmptyError();
+        }
+
+        const calculatedRoot = this.rootTx.hash;
         if (expectedRoot !== calculatedRoot) {
             throw new ParameterExpectedRootMismatchError();
         }
         // Make sure the first output is a BNS output of a known hash type
-        const outputHash = bsv2.Hash.ripemd160(rootTx.txOuts[0].script.toBuffer()).toString('hex');
+        const outputHash = bsv2.Hash.ripemd160(this.rootTx.outputs[0].script.toBuffer()).toString('hex');
         if (this.bnsOutputRipemd160 !== outputHash) {
             throw new RootOutputHashMismatchError();
         }
@@ -74,7 +81,7 @@ export class Name implements NameInterface {
         const assetId = assetTxId + '00000000';
         let prefixMap = {};
         prefixMap[`${assetId}`] = mintTx;
-        this.claimTx = mintTx;
+        this.claimTx = mintTx.toHex();
         let prevTx = mintTx;
         let address;
         if (this.opts?.testnet) {
@@ -84,7 +91,7 @@ export class Name implements NameInterface {
             address = new bsv2.Address();
         }
         this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
-        for (let i = 1; i < rawtxs.length; i++) {  
+        for (let i = 1; i < rawtxs.length; i++) {
             const tx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
             const txId = (await tx.hash()).toString('hex');
             const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
@@ -104,7 +111,7 @@ export class Name implements NameInterface {
     }
 
     private callbackSignClaimInput(tx: bsv.Transaction, inputIndex: number): boolean {
-        
+
         return true;
     }
 
@@ -124,25 +131,35 @@ export class Name implements NameInterface {
         // Construct the claim transaction which includes the name token and a fee burner token
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         const outputSize = 'f2'; // Change to fc for debug or f2 for release
-        const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee()); 
+        const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
         const publicKey = privateKey.publicKey
         const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
         const Signature = bsv.crypto.Signature;
         const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+        console.log('this.claimTx', this.claimTx);
         const claimTxObject = new bsv.Transaction(this.claimTx);
+        const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
+        // Only hash the part after the parameters (last one is the pkh)
+        const i = this.rootTx.script;
+        console.log('this.rootTx', this.rootTx);
+        console.log('i---', i);
+        const lockingScriptHashedPart = getNameNFT(i[2].buf.toHex()).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
+        const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPart, 'hex')).toString('hex');
         const nft = new SuperAssetNFTMinFeeClass(
-            new Bytes(claimTxObject.hash + '00000000'), 
-            new Ripemd160(toHex(publicKeyHash)));
+            new Bytes(claimTxObject.hash + '00000000'),
+            new Ripemd160(toHex(publicKeyHash)),
+            new Bytes(nameOutputHash160),
+            new Bytes(feeOutputHash160));
+ 
         const asmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': 
-            sighashType2Hex(sighashTypeSingle)
-        };  
+            'Tx.checkPreimageOpt_.sigHashType':
+                sighashType2Hex(sighashTypeSingle)
+        };
         nft.replaceAsmVars(asmVars);
 
         function buildMetadataOpReturn(someData = '') {
             return bsv.Script.fromASM(`OP_FALSE OP_RETURN ${Buffer.from(someData, 'utf8').toString('hex')}`);
-          }
-
+        }
         // Add claim as input
         const transferTx = new bsv.Transaction();
         transferTx.addInput(new bsv.Transaction.Input({
@@ -151,37 +168,43 @@ export class Name implements NameInterface {
             script: new bsv.Script(), // placeholder
             output: claimTxObject.outputs[0].script, // prevTx.outputs[outputIndex]
         }));
-        transferTx.setOutput(0, (tx) => {
+        console.log('about to set output--------');
+        const signingService = new SigningService();
+        await transferTx.setOutput(0, (tx) => {
             return new bsv.Transaction.Output({
                 script: nft.lockingScript,
                 satoshis: claimTxObject.outputs[0].satoshis,
             });
         })
-        // Optionally include any number of outputs
-        .setOutput(1, (tx) => {
-            const deployData = buildMetadataOpReturn('claimed')
-            return new bsv.Transaction.Output({
-                script: deployData,
-                satoshis: 0,
-            }) 
-        })
-        .setInputScript(0, (tx, output) => {
-            const preimage = generatePreimage(true, tx, nft.lockingScript, output.satoshis, sighashTypeSingle);
-            // Update prev locking script
-            const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
-            console.log('preimage', preimage);
-            console.log('output.script', output.script.toASM());
-            console.log('output.satoshis', output.satoshis);
-            console.log('outputSatsWithSize', outputSatsWithSize);
-            console.log('isTransform', new Bool(false));
-            console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
-            console.log('unlock pubKey', new PubKey(toHex(publicKey)));
-            const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeSingle);
-            console.log('sig', sig);
-            return nft.unlock(preimage, outputSatsWithSize, new Bytes('14' + privateKey.toAddress().toHex().substring(2)), new Bool(false), sig, new PubKey(toHex(publicKey))).toScript()
-        })
-        .seal()
+            // Optionally include any number of outputs
+            .setOutput(1, (tx) => {
+                console.log('about to set output 1');
+                const deployData = buildMetadataOpReturn('Claim data')
+                return new bsv.Transaction.Output({
+                    script: deployData,
+                    satoshis: 0,
+                })
+            })
+            .setInputScript(0, async (tx, output) => {
+                console.log('about to set input 0');
+                const preimage = generatePreimage(true, tx, nft.lockingScript, output.satoshis, sighashTypeSingle);
+                // Update prev locking script
+                const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
+                console.log('preimage', preimage);
+                console.log('output.script', output.script.toASM());
+                console.log('output.satoshis', output.satoshis);
+                console.log('outputSatsWithSize', outputSatsWithSize);
+                console.log('isTransform', new Bool(false));
+                console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
+                console.log('unlock pubKey', new PubKey(toHex(publicKey)));
+                const sig = await signingService.signTx(tx.toString(), output.script, output.satoshis, 0, sighashTypeSingle);
+                
+                return nft.unlock(preimage, outputSatsWithSize, new Bytes('14' + privateKey.toAddress().toHex().substring(2)), new Bool(false), sig, new PubKey(toHex(publicKey))).toScript()
+            })
+            .seal()
+        console.log('about to set all done after seal');
 
+        console.log('this is the utxo claim', transferTx);
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         return true;
     }
@@ -218,13 +241,13 @@ export class Name implements NameInterface {
         return this.nameInfo;
     }
 
-    public async updateRecords(records: Array<{type: string, name: string, value: string, ttl?: number}>): Promise<OpResult> {
+    public async updateRecords(records: Array<{ type: string, name: string, value: string, ttl?: number }>): Promise<OpResult> {
         this.ensureInit();
         return {
             success: false
         }
     }
- 
+
     public async getAddress(coinSymbol: string): Promise<string> {
         this.ensureInit();
         return '';
@@ -240,4 +263,3 @@ export class Name implements NameInterface {
         return this.opts ? this.opts.testnet : false;
     }
 }
- 

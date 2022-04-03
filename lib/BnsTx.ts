@@ -8,6 +8,7 @@ import { SuperAssetFeeBurner } from './contracts/SuperAssetFeeBurner';
 import { SuperAssetNFT } from './contracts/SuperAssetNFT';
 import { generatePreimage, sighashType2Hex } from './Helpers';
 import { SuperAssetNFTMinFee } from './contracts/SuperAssetNFTMinFee';
+import { getClaimNFTOutput, getNameNFT } from './contracts/ContractBuilder';
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
@@ -104,76 +105,13 @@ export class BnsTx implements BnsTxInterface {
         this.addBnsOutputs();
     }
 
-    static getClaimNFT(claimPkh: string) {
-        const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(BnsTx.getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
-        // Only hash the part after the parameters (last one is the pkh)
-        const lockingScriptHashedPart = BnsTx.getNameNFT(claimPkh).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
-        const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPart, 'hex')).toString('hex');
-        // Attach the minimal fee contract to the BNS contract
-        const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
-        const superAssetNFTMinFee = new SuperAssetNFTMinFeeClass(
-            new Bytes('000000000000000000000000000000000000000000000000000000000000000000000000'),
-            new Ripemd160(toHex(claimPkh)),
-            new Bytes(nameOutputHash160),
-            new Bytes(feeOutputHash160)
-        );
- 
-        const asmVarsMinFee = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
-        };
-        superAssetNFTMinFee.replaceAsmVars(asmVarsMinFee);
-        return superAssetNFTMinFee;
-    }
-
-    static getClaimNFTOutput(claimPkh: string) {
-        const claimNftScript = BnsTx.getClaimNFT(claimPkh).lockingScript;
-        const claimNftScriptHex = claimNftScript.toHex();
-        const claimSatoshisInt = 300;
-        const claimSatoshisWithFullOutput = num2bin(claimSatoshisInt, 8) + 'fd' + num2bin(claimNftScriptHex.length / 2, 2) + claimNftScriptHex;
-        return {
-            hex: claimSatoshisWithFullOutput,
-            satoshis: claimSatoshisInt,
-            script: claimNftScript,
-            hash: bsv.crypto.Hash.ripemd160(Buffer.from(claimSatoshisWithFullOutput, 'hex')).toString('hex')
-        };
-    }
-
-    static getFeeBurner() {
-        // Generate the fee burner contract
-        // The feeOutputHash160 is for the entire script
-        const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
-        const superAssetFeeBurner = new SuperAssetFeeBurnerClass();
-        const superAssetFeeBurnerAsmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
-        };
-        superAssetFeeBurner.replaceAsmVars(superAssetFeeBurnerAsmVars);
-        return superAssetFeeBurner;
-    }
-
-    static getNameNFT(claimPkh: string) {
-        // Generate the regular nft contract
-        // The nameOutputHash160 is for the part of the contract after the assetId and the p2pkh address
-        const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
-        const superAssetNFT = new SuperAssetNFTClass(
-            new Bytes('000000000000000000000000000000000000000000000000000000000000000000000000'),
-            new Ripemd160(toHex(claimPkh)),
-        );
-        const superAssetNFTAsmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeSingle)
-        };
- 
-        superAssetNFT.replaceAsmVars(superAssetNFTAsmVars);
- 
-        return superAssetNFT;  
-    }
-
     static getBnsContractConfig(claimPkh: string): BnsContractConfig {
         const letterOutputSatoshisInt = 800;
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
         const BNS = buildContractClass(SuperAssetBNS(true));
         const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
-        const claimOutput = BnsTx.getClaimNFTOutput(claimPkh);
+        const claimOutput = getClaimNFTOutput(claimPkh);
         return {
             BNS,
             miningFee: 20000,
