@@ -128,6 +128,7 @@ export class BnsTx implements BnsTxInterface {
     public addChangeOutput(changeAddress: BitcoinAddress): BnsTxInterface {
         this.tx.change(changeAddress.toString());
         this.tx.setInputScript(0, (tx, output) => {
+            console.log('setInputScript BNSTX', this.prevOutput.script)
             const preimage = generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeAll);
             const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
