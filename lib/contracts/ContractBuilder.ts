@@ -21,7 +21,7 @@ export function getNameNFT(claimPkh: string) {
         'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeSingle)
     };
     superAssetNFT.replaceAsmVars(superAssetNFTAsmVars);
-    return superAssetNFT;  
+    return superAssetNFT;
 }
 
 export function getClaimNFT(claimPkh: string) {

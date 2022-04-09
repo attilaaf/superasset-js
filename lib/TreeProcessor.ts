@@ -1,19 +1,13 @@
-import { ParameterListInsufficientSpendError, ParameterMissingError } from ".";
+import { ParameterMissingError } from ".";
 import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
 import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
 import { parseExtensionOutputData, parseExtensionOutputData2, prevOutpointFromTxIn } from "./Helpers";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
-import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, bsv, compile, num2bin, getPreimage } from "scryptlib";
-
+import { bsv } from "scryptlib";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
-import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
-import { BnsTx } from "./BnsTx";
-import { BnsTxInterface } from "./interfaces/BnsTx.interface";
- 
 const Signature = bsv.crypto.Signature;
-const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 const letters = [
     '2d',
     '5f',
@@ -58,7 +52,7 @@ const letters = [
 /**
  * Process the transaction tree
  */
-export class TreeProcessor implements TreeProcessorInterface { 
+export class TreeProcessor implements TreeProcessorInterface {
     public async validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
         const rootTx = new bsv.Transaction(rawtxs[0]);
         const calculatedRoot = rootTx.hash;
@@ -73,7 +67,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (!rootExtOutputData || rootExtOutputData.charHex !== 'ff') {
             throw new Error('Expected first transaction to be root BNS tree');
         }
-        for (let i = 1; i < rawtxs.length; i++) {  
+        for (let i = 1; i < rawtxs.length; i++) {
             const tx = new bsv.Transaction(rawtxs[i]);
             const txid = tx.hash;
             const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
@@ -102,7 +96,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             // Clear off the map to ensure a rawtx must spend something directly of it's parent
             prefixMap = {};
             prevPotentialClaimNft = txid + '00000000'; // Potential NFT is always at position 1
-            for (let o = 1; o < 38; o++) {  
+            for (let o = 1; o < 38; o++) {
                 const buf = Buffer.allocUnsafe(4);
                 buf.writeInt32LE(o);
                 const outNumString = buf.toString('hex');
@@ -110,7 +104,7 @@ export class TreeProcessor implements TreeProcessorInterface {
             }
             prevTx = tx;
         }
-       
+
         if (rawtxs.length === 1) {
             return {
                 rawtxIndexForClaim: -1,
@@ -136,7 +130,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 fulfilledName: '',
                 lastExtensionOutput: null,
                 expectedExtensionOutput: null,
- 
+
             }
         }
 
@@ -151,8 +145,8 @@ export class TreeProcessor implements TreeProcessorInterface {
                 tx,
                 fulfilledName: '',
                 lastExtensionOutput: null,
-                expectedExtensionOutput, 
- 
+                expectedExtensionOutput,
+
             }
         }
 
@@ -163,7 +157,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         let nameString = '';
         let currTx: bsv.Transaction | null = null;
         let lastExtensionOutput: ExtensionOutputData | null = null;
-        for (let i = 0; i < rawtxs.length; i++) { 
+        for (let i = 0; i < rawtxs.length; i++) {
             currTx = new bsv.Transaction(rawtxs[i]);
             if (i === 0) {
                 await this.validateRootTxFields(currTx);
@@ -172,7 +166,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                 // Enforce that each spend in the chain spends something from before
                 if (!prefixMap[prevOutpoint]) {
                     throw new PrefixChainMismatchError();
-                } 
+                }
                 // It is the first spend of the root; bootstrapped
                 await this.validateOutputs(currTx)
                 lastExtensionOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex, currTx);
@@ -185,13 +179,13 @@ export class TreeProcessor implements TreeProcessorInterface {
                 }
                 // Clear off the map to ensure a rawtx must spend something directly of it's parent
                 prefixMap = {};
-                for (let o = 1; o < 38; o++) {  
+                for (let o = 1; o < 38; o++) {
                     const buf = Buffer.allocUnsafe(4);
                     buf.writeInt32LE(o);
                     const outNumString = buf.toString('hex');
                     prefixMap[currTx.hash + outNumString] = currTx;
                 }
-            } 
+            }
         }
 
         let missingCharIndex = 0;
@@ -212,7 +206,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         if (!expectedExtensionOutput) {
             throw new PrefixChainMismatchError();
         }
-        const partialResult: RequiredTransactionPartialResult ={
+        const partialResult: RequiredTransactionPartialResult = {
             tx: currTx,
             fulfilledName: nameString,
             lastExtensionOutput,
@@ -220,7 +214,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
         return partialResult;
     }
-  
+
     private async validateRootTxFields(rawtx: any) {
         const extensionData = await parseExtensionOutputData(rawtx, 0);
         if (Buffer.from(extensionData?.bnsConstant || '00', 'hex').toString('utf8') !== 'bns1') {
@@ -236,9 +230,9 @@ export class TreeProcessor implements TreeProcessorInterface {
             throw new InvalidCharError('invalid root charHex');
         }
     }
-    
+
     private async validateOutputs(rawtx: any) {
-        for (let o = 1; o < 38; o++) {  
+        for (let o = 1; o < 38; o++) {
             const buf = Buffer.allocUnsafe(4);
             buf.writeInt32LE(o);
             // const outNumString = buf.toString('hex');

@@ -1,23 +1,15 @@
 import { BnsTxInterface } from './interfaces/BnsTx.interface';
 import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
-import { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, Bool, Bytes, compile, num2bin, getPreimage, bsv } from 'scryptlib';
+import { buildContractClass, Ripemd160, Bool, Bytes, num2bin, bsv } from 'scryptlib';
 import { BitcoinAddress } from '.';
 import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 import { SuperAssetBNS } from './contracts/SuperAssetBNS';
-import { SuperAssetFeeBurner } from './contracts/SuperAssetFeeBurner';
-import { SuperAssetNFT } from './contracts/SuperAssetNFT';
-import { generatePreimage, sighashType2Hex } from './Helpers';
-import { SuperAssetNFTMinFee } from './contracts/SuperAssetNFTMinFee';
-import { getClaimNFTOutput, getNameNFT } from './contracts/ContractBuilder';
+import { generatePreimage } from './Helpers';
+import { getClaimNFTOutput } from './contracts/ContractBuilder';
 
 const Signature = bsv.crypto.Signature;
-const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
 const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 
-function buildNFTPublicKeyHashOut(asset, pkh) {
-    const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
-    return script;
-}
 function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, dupHash) {
     const slicedPrefix = lockingScriptASM.substring(0, 90);
     const slicedSuffix = lockingScriptASM.substring(138);
@@ -71,9 +63,9 @@ export class BnsTx implements BnsTxInterface {
     private scryptBns: any;
     private bnsContractConfig: any;
     constructor(
-        private prevOutput: ExtensionOutputData, 
+        private prevOutput: ExtensionOutputData,
         private claimPkh: string,
-        private debug = false, 
+        private debug = false,
         private tx: bsv.Transaction = new bsv.Transaction()
     ) {
         if (this.debug) {
@@ -139,7 +131,7 @@ export class BnsTx implements BnsTxInterface {
             const scriptUnlock = this.scryptBns.extend(
                 preimage,
                 new Bytes(dividedSatoshisBytesWithSize),
-                new Bytes(this.bnsContractConfig.claimOutput), 
+                new Bytes(this.bnsContractConfig.claimOutput),
                 changeAddressHash160,
                 new Bytes(changeSatoshisBytes),
                 new Bool(false),

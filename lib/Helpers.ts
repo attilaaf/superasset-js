@@ -4,7 +4,7 @@ import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface'
 import { getPreimage } from 'scryptlib';
 
 export const sighashType2Hex = s => s.toString(16)
- 
+
 const MSB_THRESHOLD = 0x7e;
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.prevTxId.toString('hex');
@@ -21,6 +21,10 @@ export const intToLE = (i) => {
     return buf.toString('hex');
 }
 
+export function buildNFTPublicKeyHashOut(asset, pkh) {
+    const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
+    return script;
+}
 
 export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
     let preimage: any = null;
@@ -31,7 +35,7 @@ export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, si
             const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
             let preimageHex = toHex(preimage_);
             preimage = preimage_;
-            const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex')); 
+            const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex'));
             const msb = h.readUInt8();
             if (msb < MSB_THRESHOLD) {
                 // the resulting MSB of sighash must be less than the threshold
@@ -45,7 +49,7 @@ export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, si
 }
 
 
-export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> =>  {
+export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> => {
     const script = tx.outputs[outputIndex].script;
     const satoshis = tx.outputs[outputIndex].satoshis;
     const txId = tx.hash
@@ -69,7 +73,7 @@ export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex:
     return outputData;
 };
 
-export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number, tx: bsv.Transaction): Promise<ExtensionOutputData | null> =>  {
+export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number, tx: bsv.Transaction): Promise<ExtensionOutputData | null> => {
     const script = out.script;
     const satoshis = out.satoshis;
     const outputData: ExtensionOutputData = {
@@ -91,4 +95,3 @@ export const parseExtensionOutputData2 = async (out: any, txId: string, outputIn
     return outputData;
 };
 
- 

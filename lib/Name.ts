@@ -111,9 +111,20 @@ export class Name implements NameInterface {
         }
     }
 
-    private callbackSignClaimInput(tx: bsv.Transaction, inputIndex: number): boolean {
-
-        return true;
+    /**
+     * Helper callback method to be able to test and swap out implementations of signing of a claim input
+     * 
+     * @param rawtx Rawtx to sign
+     * @param script Input script to sign
+     * @param satoshis Satoshis of the input
+     * @param inputIndex Index of the input
+     * @param sighashType Sighash type to sign with. Usually SIGHASH_ALL for this type of tx
+     * @returns 
+     */
+    public async callbackSignClaimInput(rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number): Promise<any> {
+        const signingService = new SigningService();
+        const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, true);
+        return sig;
     }
 
     public async claim(key: string | bsv.PrivateKey, callback = this.callbackSignClaimInput): Promise<boolean> {
@@ -129,15 +140,12 @@ export class Name implements NameInterface {
         const bitcoinAddress = new BitcoinAddress(privateKey.toAddress());
         const utxos = await Resolver.fetchUtxos(bitcoinAddress.toString());
         // Construct the claim transaction which includes the name token and a fee burner token
-        // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
-        const outputSize = 'f2'; // Change to fc for debug or f2 for release
         const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
         const publicKey = privateKey.publicKey
         const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
         const Signature = bsv.crypto.Signature;
         const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
         const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
-
         const claimTxObject = new bsv.Transaction(this.claimTx);
         const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
         // Only hash the part after the parameters (last one is the pkh)
@@ -149,7 +157,7 @@ export class Name implements NameInterface {
             new Ripemd160(toHex(publicKeyHash)),
             new Bytes(nameOutputHash160),
             new Bytes(feeOutputHash160));
- 
+
         const asmVarsSingle = {
             'Tx.checkPreimageOpt_.sigHashType':
                 sighashType2Hex(sighashTypeSingle)
@@ -167,7 +175,7 @@ export class Name implements NameInterface {
             script: new bsv.Script(), // placeholder
             output: claimTxObject.outputs[0], // prevTx.outputs[outputIndex]
         }));
-        const signingService = new SigningService();
+
         // Construct the NFT to morph into, according to allowed nameNftHash
         const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
         const superAssetNFT = new SuperAssetNFTClass(
@@ -209,22 +217,22 @@ export class Name implements NameInterface {
         console.log('isTransform', new Bool(false));
         console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
         console.log('unlock pubKey', new PubKey(toHex(publicKey)));
-        const sig = await signingService.signTx(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeSingle, true);
+        const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeSingle)
         console.log('signTx', sig);
-        const script = claimNftMinFee.unlock(preimage, 
-            outputSatsWithSize, 
-            new Bytes('14' + privateKey.toAddress().toHex().substring(2)), 
-            sig, 
+        const script = claimNftMinFee.unlock(preimage,
+            outputSatsWithSize,
+            new Bytes('14' + privateKey.toAddress().toHex().substring(2)),
+            sig,
             new PubKey(toHex(publicKey)),
             new Bytes(nameOutputHash160),
             new Bytes(feeOutputHash160)
         ).toScript()
         transferTx.setInputScript(0, script)
-        .seal()
+            .seal()
         console.log('this is the utxo claim', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const result = await Resolver.sendTx(transferTx);
-        console.log('result', result);
+        console.log('result of sendTx claim', result);
         return true;
     }
 

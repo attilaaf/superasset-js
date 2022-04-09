@@ -17,8 +17,6 @@ export class SigningService implements SigningServiceInterface {
                     inputIndex,
                     sighashType
                 });
-                console.log('res.data', res.data.result.sig)
-               // const sigBuf = Buffer.from(res.data.result.sig, 'hex');
                 return new Sig(res.data.result.sig);
             } catch (error: any) {
                 throw error
@@ -26,7 +24,6 @@ export class SigningService implements SigningServiceInterface {
         } else {
             const tx = new bsv.Transaction(rawtx);
             const sig = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType);
-            console.log('sig norma', sig);
             return sig;
         }
     }

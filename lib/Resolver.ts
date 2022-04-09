@@ -4,16 +4,15 @@ import { ResolverInterface } from "./interfaces/Resolver.interface";
 import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
 import { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
 import { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
-import { BnsTx, InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
+import { InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
-import { BnsContractConfig } from "./interfaces/BnsContractConfig.interface";
 import { bsv } from 'scryptlib';
 import * as axios from 'axios';
 import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 import { getClaimNFTOutput } from "./contracts/ContractBuilder";
-const { buildContractClass, toHex, signTx, Ripemd160, Sig, PubKey, bsv, Bool, Bytes, compile, num2bin, getPreimage } = require('scryptlib');
+const { buildContractClass, Ripemd160, bsv, Bytes } = require('scryptlib');
 
 const sighashType2Hex = s => s.toString(16)
 const API_PREFIX = process.env.NETWORK === 'mainnet' ? 'https://api.whatsonchain.com/v1/bsv/main' : 'https://api.whatsonchain.com/v1/bsv/test';
