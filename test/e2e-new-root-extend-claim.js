@@ -21,6 +21,7 @@ const sleeper = async (seconds) => {
 }
 describe('Create new root, extend and claim bat', () => {
    it('e2e run', async () => {
+      process.env.API_SERVICE_URL = 'http://localhost:4000';
       const publicKey = privateKey.publicKey;
       const publicKeyHash = bsv.crypto.Hash.sha256ripemd160(publicKey.toBuffer())
       const issuerPkh = toHex(publicKeyHash);
@@ -50,11 +51,11 @@ describe('Create new root, extend and claim bat', () => {
                testnet: true,
             });
             try {
-               const name = await resolver.getName('bat');
-               console.log('Checking for name: ', name);
+               const name = await resolver.getName('a');
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
                const result = await name.claim(privateKeyStr, true); // By default
+               console.log('result claim', result);
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
                await name.update([

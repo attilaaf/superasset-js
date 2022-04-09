@@ -23,19 +23,15 @@ export const intToLE = (i) => {
 
 
 export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, sighashType, idx = 0) {
-    console.log('txLegacy', txLegacy, lockingScriptASM);
     let preimage: any = null;
     if (isOpt) {
         for (let i = 0; ; i++) {
             // malleate tx and thus sighash to satisfy constraint
             txLegacy.nLockTime = i;
-            console.log('txLegacy2');
             const preimage_ = getPreimage(txLegacy, lockingScriptASM, satValue, idx, sighashType);
-            console.log('txLegacy3');
             let preimageHex = toHex(preimage_);
             preimage = preimage_;
             const h = bsv.crypto.Hash.sha256sha256(Buffer.from(preimageHex, 'hex')); 
-            console.log('txLegacy5');
             const msb = h.readUInt8();
             if (msb < MSB_THRESHOLD) {
                 // the resulting MSB of sighash must be less than the threshold

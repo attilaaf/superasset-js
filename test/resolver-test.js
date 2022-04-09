@@ -10,7 +10,7 @@ var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
-var { bsv } = require('scryptlib');
+var { bsv, toHex } = require('scryptlib');
  
 describe('Resolver', () => {
  
@@ -173,7 +173,9 @@ describe('Resolver', () => {
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.expectedExtensionOutput.charHex).to.equal('61');
          expect(partial.expectedExtensionOutput.char).to.equal('a');
-         expect(partial.expectedExtensionOutput.outputIndex).to.equal(12);
+
+         console.log('partial', partial);
+         expect(partial.expectedExtensionOutput.outputIndex).to.equal(13);
          expect(partial.lastExtensionOutput.char).to.equal('b');
          expect(partial.lastExtensionOutput.outputIndex).to.equal(14);
          return;
@@ -223,8 +225,8 @@ describe('Resolver', () => {
          }
          const outputSats = 300 + 800 * 38;
          expect(bnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
-         expect(bnsTx.getFeeRate()).to.eql(0.5);
-         expect(bnsTx.getFee()).to.eql(15913); 
+         expect(bnsTx.getFeeRate()).to.eql(0.5000173858618172);
+         expect(bnsTx.getFee()).to.eql(14380); 
          return;
       }
       expect(false).to.be.true;
