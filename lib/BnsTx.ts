@@ -6,7 +6,7 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 import { SuperAssetBNS } from './contracts/SuperAssetBNS';
 import { generatePreimage } from './Helpers';
 import { getClaimNFTOutput } from './contracts/ContractBuilder';
-import { letters } from './Constants';
+import { letters, letterOutputSatoshisInt } from './Constants';
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
@@ -57,7 +57,7 @@ export class BnsTx implements BnsTxInterface {
     }
 
     static getBnsContractConfig(claimPkh: string): BnsContractConfig {
-        const letterOutputSatoshisInt = 800;
+      //  const letterOutputSatoshisInt = 800;
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
         const BNS = buildContractClass(SuperAssetBNS(true));

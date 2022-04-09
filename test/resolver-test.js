@@ -216,7 +216,7 @@ describe('Resolver', () => {
             outputIndex: 1,
             satoshis: 92904933,
             script: '76a914ada084074f9a305be43e3366455db062d6d3669788ac'
-         }; 
+         };
          bnsTx.addFundingInput(utxo);
          bnsTx.addChangeOutput(bitcoinAddress);
          bnsTx.signFundingInput(privateKey);
@@ -225,7 +225,8 @@ describe('Resolver', () => {
          }
          const outputSats = 300 + 800 * 38;
          expect(bnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
-         expect(bnsTx.getFeeRate()).to.eql(0.5000173858618172);
+         // expect(bnsTx.getFeeRate()).to.eql(0.5000173858618172);
+         expect(bnsTx.getFeeRate()).to.eql(0.5);
          expect(bnsTx.getFee()).to.eql(14380); 
          return;
       }

@@ -2,16 +2,12 @@
 var chai = require('chai');
 var expect = require('chai').expect;
 var chaiAsPromised = require('chai-as-promised');
-const { buildContractClass, Bytes, Ripemd160 } = require('scryptlib');
-const sighashType2Hex = s => s.toString(16)
 chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
-var { baRoot, baRootExtend, baRootExtendB, baRootExtendBA } = require('./ba-sample-tx');
-var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys
 var { privateKey, privateKeyStr } = require('../privateKey');
-var { bsv, toHex, num2bin } = require('scryptlib');
+var { bsv, toHex } = require('scryptlib');
 const sleeper = async (seconds) => {
    return new Promise((resolve) => {
       setTimeout(() => {
@@ -32,7 +28,7 @@ describe('Create new root, extend and claim bat', () => {
       const testRoot = tx.hash;
       console.log('Deployed tx: ', tx.toString());
       await sleeper(5);
-      const txChain = [ tx.toString() ];
+      const txChain = [tx.toString()];
       let counter = 0;
       const bnsOutputRipemd160 = bsv.crypto.Hash.ripemd160(tx.outputs[0].script.toBuffer()).toString('hex');
       try {
@@ -91,10 +87,10 @@ describe('Create new root, extend and claim bat', () => {
                console.log(counter + ' Broadcasting...', tx.toString(), tx.hash)
                txChain.push(tx.toString());
                await index.Resolver.sendTx(tx);
-               console.log('Broadcasted tx...', tx.hash) 
+               console.log('Broadcasted tx...', tx.hash)
             }
             counter++;
-            console.log('sleeping 5 seconds ...') 
+            console.log('sleeping 5 seconds ...')
             await sleeper(5);
          } while (true);
 

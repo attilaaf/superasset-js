@@ -4,6 +4,7 @@ import * as bsv from 'bsv';
 import { SuperAssetNFT } from "./SuperAssetNFT";
 import { SuperAssetNFTMinFee } from "./SuperAssetNFTMinFee";
 import { SuperAssetFeeBurner } from "./SuperAssetFeeBurner";
+import { claimSatoshisInt, feeBurnerRefundAmount } from "../Constants";
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
@@ -49,7 +50,7 @@ export function getFeeBurner() {
     // Generate the fee burner contract
     // The feeOutputHash160 is for the entire script
     const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
-    const superAssetFeeBurner = new SuperAssetFeeBurnerClass();
+    const superAssetFeeBurner = new SuperAssetFeeBurnerClass(feeBurnerRefundAmount);
     const superAssetFeeBurnerAsmVars = {
         'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeAll)
     };
@@ -60,7 +61,6 @@ export function getFeeBurner() {
 export function getClaimNFTOutput(claimPkh: string) {
     const claimNftScript = getClaimNFT(claimPkh).lockingScript;
     const claimNftScriptHex = claimNftScript.toHex();
-    const claimSatoshisInt = 300;
     const claimSatoshisWithFullOutput = num2bin(claimSatoshisInt, 8) + 'fd' + num2bin(claimNftScriptHex.length / 2, 2) + claimNftScriptHex;
     return {
         hex: claimSatoshisWithFullOutput,

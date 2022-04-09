@@ -88,8 +88,7 @@ export class Resolver implements ResolverInterface {
             new Bytes('ff')
         );
         const asmVars = {
-            'Tx.checkPreimageOpt_.sigHashType':
-                sighashType2Hex(sighashTypeBns)
+            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeBns)
         };
         tree.replaceAsmVars(asmVars);
         return tree.lockingScript;

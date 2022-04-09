@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2021 Matter Web Services Inc., Attila Aros 
+Copyright (c) 2022 Matter Web Services Inc., Attila Aros 
  
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,11 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 contract SuperAssetFeeBurner {
-
+    int refundAmount; 
     public function unlock(SigHashPreimage txPreimage, bytes reimburseAddress) {
         require(
             hash256(
-                num2bin(1000, 8) + b'1976a914' + reimburseAddress + b'88ac'
+                num2bin(this.refundAmount, 8) + b'1976a914' + reimburseAddress + b'88ac'
             ) 
             ==
             txPreimage[len(txPreimage) - 40 : len(txPreimage) - 8]  

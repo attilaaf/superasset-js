@@ -192,7 +192,7 @@ export class TreeProcessor implements TreeProcessorInterface {
     }
 
     private async validateOutputs(rawtx: any) {
-        for (let o = 1; o < 38; o++) {
+        for (let o = 1; o < letters.length; o++) {
             const buf = Buffer.allocUnsafe(4);
             buf.writeInt32LE(o);
             // const outNumString = buf.toString('hex');

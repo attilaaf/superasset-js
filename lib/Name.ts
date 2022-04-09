@@ -21,6 +21,7 @@ import { SigningService } from "./SigningService";
 import { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
 import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 import { SuperAssetNFT } from "./contracts/SuperAssetNFT";
+import { feeBurnerRefundAmount } from "./Constants";
 
 export class Name implements NameInterface {
     private initialized = false;                // Whether it is initialized
@@ -196,7 +197,7 @@ export class Name implements NameInterface {
 
         // Construct the fee burner and allocate the required satoshis
         const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
-        const superAssetFeeBurner = new SuperAssetFeeBurnerClass();
+        const superAssetFeeBurner = new SuperAssetFeeBurnerClass(feeBurnerRefundAmount);
         const asmVarsAll = {
             'Tx.checkPreimageOpt_.sigHashType':
                 sighashType2Hex(sighashTypeAll)
@@ -208,11 +209,9 @@ export class Name implements NameInterface {
                 satoshis: 10000,
             })
         });
-
         transferTx.from(utxos[0]);
         transferTx.change(bitcoinAddressFunding.toString());
         const preimage = generatePreimage(true, transferTx, claimNftMinFee.lockingScript, claimTxObject.outputs[0].satoshis, sighashTypeSingle);
-        // Update prev locking script
         const outputSizeWithLength = 'fd' + num2bin(superAssetNFT.lockingScript.toHex().length / 2, 2);
         console.log('outputSizeWithLength', outputSizeWithLength);
         const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
@@ -235,7 +234,7 @@ export class Name implements NameInterface {
             new Bytes(feeOutputHash160)
         ).toScript()
         transferTx.setInputScript(0, script)
-        .seal()
+            .seal()
         console.log('this is the utxo claim', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const result = await Resolver.sendTx(transferTx);

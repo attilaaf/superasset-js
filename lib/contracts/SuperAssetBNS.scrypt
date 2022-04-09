@@ -1,4 +1,4 @@
-// Copyright 2021 (c) Matter Web Services, Inc. Attila Aros
+// Copyright 2022 (c) Matter Web Services, Inc. Attila Aros
 // Strictly confidential. No use allowed.
 contract BNS {
     // Do NOT provide a constructor as that will add unnecessary OP_0 OP_0 to the beginning of the contract

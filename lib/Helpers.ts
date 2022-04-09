@@ -48,7 +48,6 @@ export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, si
     return preimage;
 }
 
-
 export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> => {
     const script = tx.outputs[outputIndex].script;
     const satoshis = tx.outputs[outputIndex].satoshis;
@@ -94,4 +93,3 @@ export const parseExtensionOutputData2 = async (out: any, txId: string, outputIn
     };
     return outputData;
 };
-

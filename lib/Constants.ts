@@ -40,3 +40,9 @@ export const letters = [
     '79',
     '7a'
 ];
+
+export const feeBurnerRefundAmount = 1000;
+
+export const claimSatoshisInt = 300;
+
+export const letterOutputSatoshisInt = 800;
