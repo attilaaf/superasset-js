@@ -3,6 +3,7 @@ import { BitcoinAddress } from "..";
 import { NameInfo } from "./NameInfo.interface";
 import { OpResult } from "./OpResult.interface";
 import { Record } from "./Record.interface.ts";
+import * as bsv from 'bsv';
 
 export interface NameInterface { 
     // The current owner of the name UTXO
@@ -16,7 +17,11 @@ export interface NameInterface {
     // The root of this name tree
     getRoot: () => string;
     // If it is not claimed, then claim it for the private key
-    claim: (privateKey: string) => Promise<boolean>;
+    claim: (
+        privateKey:  string | bsv.PrivateKey, 
+        privateKeyFunding: string | bsv.PrivateKey, 
+        callback?: (rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
+    ) => Promise<any>;
     // Whether there was a spend of the claim tx
     isClaimed: () => boolean;
     // The root of this name tree

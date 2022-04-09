@@ -1,4 +1,5 @@
 import * as bsv2 from 'bsv2';
+
 export class BitcoinAddress { 
     constructor(private address: bsv2.Address){
     }
@@ -13,6 +14,11 @@ export class BitcoinAddress {
 
     toString(): string {
         return this.address.toString();
+    }
+
+    toP2NFTPKH(asset: string) {
+        const addressHash160 = this.address.toHex().substring(2);
+        return `${asset} ${addressHash160} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`;
     }
 
     toP2PKH(): string {

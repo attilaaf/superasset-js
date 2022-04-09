@@ -33,13 +33,6 @@ export {
 export { BitcoinAddress } from "./BitcoinAddress";
 export { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
 
-const defaultOptions: any = {
-  api: 'https://api.mattercloud.io/api/v3/main/address/ADDRESS_STR/utxo', // Use ADDRESS_STR as replacement
-  feeb: 0.5,
-  minfee: 1000,
-  verbose: false,
-}
-
 export class BNS implements BNSInterface {
   // get a resolver. Uses default if no alternative configuration is provided
   public resolver(config?: ResolverConfigInterface): ResolverInterface {
@@ -55,10 +48,9 @@ export function instance(): BNSInterface {
   return new BNS();
 }
 
-
 try {
   if (window) {
-    window['BNS'] = {
+    window['BASED'] = {
       instance: instance
     };
   }

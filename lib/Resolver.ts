@@ -13,7 +13,6 @@ import * as axios from 'axios';
 import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 import { getClaimNFTOutput } from "./contracts/ContractBuilder";
 const { buildContractClass, Ripemd160, bsv, Bytes } = require('scryptlib');
-
 const sighashType2Hex = s => s.toString(16)
 const API_PREFIX = process.env.NETWORK === 'mainnet' ? 'https://api.whatsonchain.com/v1/bsv/main' : 'https://api.whatsonchain.com/v1/bsv/test';
 const BNS_ROOT = 'b72470fb23eb5f90dceda5a376869702af2e6605824f3cb2e0cf588f0c559514';
@@ -73,11 +72,6 @@ export class Resolver implements ResolverInterface {
 
     public getResolverConfig(): ResolverConfigInterface {
         return this.resolverConfig;
-    }
-
-    static buildNFTPublicKeyHashOut(asset, pkh) {
-        const script = bsv.Script.fromASM(`${asset} ${pkh} OP_NIP OP_OVER OP_HASH160 OP_EQUALVERIFY OP_CHECKSIG`);
-        return script;
     }
 
     static generateBnsRoot(issuerPkh: string, claimPkh: string) {

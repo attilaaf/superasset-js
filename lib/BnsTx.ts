@@ -6,6 +6,7 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 import { SuperAssetBNS } from './contracts/SuperAssetBNS';
 import { generatePreimage } from './Helpers';
 import { getClaimNFTOutput } from './contracts/ContractBuilder';
+import { letters } from './Constants';
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
@@ -16,47 +17,6 @@ function getLockingScriptForCharacter(lockingScriptASM, letter, dimensionCount, 
     const replaced = slicedPrefix + ' ' + dupHash + ' ' + num2bin(dimensionCount, 1) + ' ' + letter + ' ' + slicedSuffix;
     return bsv.Script.fromASM(replaced);
 }
-const letters = [
-    '2d',
-    '5f',
-    // '2e',
-    '30',
-    '31',
-    '32',
-    '33',
-    '34',
-    '35',
-    '36',
-    '37',
-    '38',
-    '39',
-    '61',
-    '62',
-    '63',
-    '64',
-    '65',
-    '66',
-    '67',
-    '68',
-    '69',
-    '6a',
-    '6b',
-    '6c',
-    '6d',
-    '6e',
-    '6f',
-    '70',
-    '71',
-    '72',
-    '73',
-    '74',
-    '75',
-    '76',
-    '77',
-    '78',
-    '79',
-    '7a'
-];
 
 export class BnsTx implements BnsTxInterface {
     private fundingInput: any;
@@ -76,8 +36,7 @@ export class BnsTx implements BnsTxInterface {
             console.log('Debug', 'constructor.currentDimension', this.prevOutput.currentDimension);
             console.log('Debug', 'constructor.sighashTypeBns', sighashTypeAll.toString(16));
         }
-        this.bnsContractConfig = BnsTx.getBnsContractConfig(claimPkh);
-        console.log('bnsContractConfig', this.bnsContractConfig);
+        this.bnsContractConfig = BnsTx.getBnsContractConfig(this.claimPkh);
         this.scryptBns = new this.bnsContractConfig.BNS(
             new Bytes(this.prevOutput.bnsConstant),
             new Ripemd160(this.prevOutput.issuerPkh),
@@ -120,7 +79,6 @@ export class BnsTx implements BnsTxInterface {
     public addChangeOutput(changeAddress: BitcoinAddress): BnsTxInterface {
         this.tx.change(changeAddress.toString());
         this.tx.setInputScript(0, (tx, output) => {
-            console.log('setInputScript BNSTX', this.prevOutput.script)
             const preimage = generatePreimage(true, this.tx, this.prevOutput.script, this.prevOutput.satoshis, sighashTypeAll);
             const changeAddressHash160 = new Bytes(changeAddress.toHash160Bytes());
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);

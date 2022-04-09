@@ -7,48 +7,8 @@ import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransacti
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
 import { bsv } from "scryptlib";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
-const Signature = bsv.crypto.Signature;
-const letters = [
-    '2d',
-    '5f',
-    // '2e',
-    '30',
-    '31',
-    '32',
-    '33',
-    '34',
-    '35',
-    '36',
-    '37',
-    '38',
-    '39',
-    '61',
-    '62',
-    '63',
-    '64',
-    '65',
-    '66',
-    '67',
-    '68',
-    '69',
-    '6a',
-    '6b',
-    '6c',
-    '6d',
-    '6e',
-    '6f',
-    '70',
-    '71',
-    '72',
-    '73',
-    '74',
-    '75',
-    '76',
-    '77',
-    '78',
-    '79',
-    '7a'
-];
+import { letters } from "./Constants";
+
 /**
  * Process the transaction tree
  */
@@ -114,7 +74,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
 
         if (nameString === '') {
-            //    throw new ParameterListInsufficientSpendError();
+            // throw new ParameterListInsufficientSpendError();
         }
         return {
             rawtxIndexForClaim: rawtxs.length - 1,
