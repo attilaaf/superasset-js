@@ -1,6 +1,6 @@
 import { GetNameTransactionsResult } from "./GetNameTransactionsResult.interface";
 
-export interface ResolverConfigInterface { 
+export interface ResolverConfigInterface {
     testnet?: string;
     root?: string;
     url?: string;

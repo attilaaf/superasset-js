@@ -1,6 +1,6 @@
 import * as bsv from 'bsv';
 
-export interface ExtensionOutputData { 
+export interface ExtensionOutputData {
     outpointHex: string;
     txId: string;
     txIdBuf: Buffer;

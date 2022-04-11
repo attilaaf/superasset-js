@@ -46,3 +46,7 @@ export const feeBurnerRefundAmount = 1000;
 export const claimSatoshisInt = 300;
 
 export const letterOutputSatoshisInt = 800;
+
+export const feeBurnerSatoshis = 10000;
+
+export const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');

@@ -5,7 +5,7 @@ import { OpResult } from "./OpResult.interface";
 import { Record } from "./Record.interface.ts";
 import * as bsv from 'bsv';
 
-export interface NameInterface { 
+export interface NameInterface {
     // The current owner of the name UTXO
     getOwner: () => BitcoinAddress | null;
     // Set the new owner of the name UTXO (transfer)
@@ -13,13 +13,13 @@ export interface NameInterface {
     // Get all records
     getNameInfo: () => NameInfo | null;
     // Update records
-    updateRecords: (records: Array<{ type: string, name: string, value: string, op?: number, ttl?: number}>) => Promise<OpResult>;
+    updateRecords: (records: Array<{ type: string, name: string, value: string, op?: number, ttl?: number }>) => Promise<OpResult>;
     // The root of this name tree
     getRoot: () => string;
     // If it is not claimed, then claim it for the private key
     claim: (
-        privateKey:  string | bsv.PrivateKey, 
-        privateKeyFunding: string | bsv.PrivateKey, 
+        privateKey: string | bsv.PrivateKey,
+        privateKeyFunding: string | bsv.PrivateKey,
         callback?: (rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
     ) => Promise<any>;
     // Whether there was a spend of the claim tx
@@ -32,4 +32,3 @@ export interface NameInterface {
     // Is Testnet
     isTestnet: () => boolean;
 }
- 

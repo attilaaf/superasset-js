@@ -12,6 +12,7 @@ import { bsv } from 'scryptlib';
 import * as axios from 'axios';
 import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 import { getClaimNFTOutput } from "./contracts/ContractBuilder";
+import { bnsConstant } from "./Constants";
 const { buildContractClass, Ripemd160, bsv, Bytes } = require('scryptlib');
 const sighashType2Hex = s => s.toString(16)
 const API_PREFIX = process.env.NETWORK === 'mainnet' ? 'https://api.whatsonchain.com/v1/bsv/main' : 'https://api.whatsonchain.com/v1/bsv/test';
@@ -75,7 +76,7 @@ export class Resolver implements ResolverInterface {
     }
 
     static generateBnsRoot(issuerPkh: string, claimPkh: string) {
-        const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
+        
         let prevDupHash = '0000000000000000000000000000000000000000';
         let currentDimension = 20;
         const BNS = buildContractClass(SuperAssetBNS(true));

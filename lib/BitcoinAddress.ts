@@ -1,7 +1,7 @@
 import * as bsv2 from 'bsv2';
 
-export class BitcoinAddress { 
-    constructor(private address: bsv2.Address){
+export class BitcoinAddress {
+    constructor(private address: bsv2.Address) {
     }
 
     static fromString(address: string, isTestnet = false): BitcoinAddress {

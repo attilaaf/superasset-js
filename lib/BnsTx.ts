@@ -6,7 +6,7 @@ import { BnsContractConfig } from './interfaces/BnsContractConfig.interface';
 import { SuperAssetBNS } from './contracts/SuperAssetBNS';
 import { generatePreimage } from './Helpers';
 import { getClaimNFTOutput } from './contracts/ContractBuilder';
-import { letters, letterOutputSatoshisInt } from './Constants';
+import { letters, letterOutputSatoshisInt, bnsConstant } from './Constants';
 
 const Signature = bsv.crypto.Signature;
 const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
@@ -57,15 +57,13 @@ export class BnsTx implements BnsTxInterface {
     }
 
     static getBnsContractConfig(claimPkh: string): BnsContractConfig {
-      //  const letterOutputSatoshisInt = 800;
+        //  const letterOutputSatoshisInt = 800;
         // If changing to 'release' then update the outputSize to 'f2' (to reflect smaller output size). Use 'fc' for debug.
         //const outputSize = 'fc'; // Change to fc for debug or f2 for release
         const BNS = buildContractClass(SuperAssetBNS(true));
-        const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
         const claimOutput = getClaimNFTOutput(claimPkh);
         return {
             BNS,
-            miningFee: 20000,
             bnsConstant,
             claimOutputHash160: claimOutput.hash,
             claimOutput: claimOutput.hex,
@@ -84,7 +82,6 @@ export class BnsTx implements BnsTxInterface {
             const changeSatoshisBytes = num2bin(this.tx.getChangeAmount(), 8);
             const issuerPubKey = new Bytes('00');
             const issuerSig = new Bytes('00');
-            // const dividedSatoshisBytesWithSize = new Bytes(num2bin(this.bnsContractConfig.claimOutputSatoshi
             const dividedSatoshisBytesWithSize = num2bin(this.bnsContractConfig.letterOutputSatoshisInt, 8) + 'fd' + num2bin(this.scryptBns.lockingScript.toHex().length / 2, 2);
             const scriptUnlock = this.scryptBns.extend(
                 preimage,
@@ -117,11 +114,10 @@ export class BnsTx implements BnsTxInterface {
 
     private addBnsInput(prevTxId: string, outputIndex: number, prevScript: bsv.Script): BnsTxInterface {
         this.tx.addInput(new bsv.Transaction.Input({
-            // prevTxId: prevTx.id,
             prevTxId,
             outputIndex: outputIndex,
             script: new bsv.Script(), // placeholder
-            output: prevScript, // prevTx.outputs[outputIndex]
+            output: prevScript,
         }));
         return this.tx;
     }
