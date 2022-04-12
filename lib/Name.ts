@@ -122,13 +122,13 @@ export class Name implements NameInterface {
      * @param sighashType Sighash type to sign with. Usually SIGHASH_ALL for this type of tx
      * @returns 
      */
-    public async callbackSignClaimInput(rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number): Promise<any> {
+    public async callbackSignClaimInput(rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number, isRemote = true): Promise<any> {
         const signingService = new SigningService();
-        const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, true);
+        const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
     }
 
-    public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, callback = this.callbackSignClaimInput): Promise<any> {
+    public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
         this.ensureInit();
         if (this.isClaimed()) {
             throw new Error('Name already claimed')
@@ -146,7 +146,7 @@ export class Name implements NameInterface {
         const bitcoinAddress = new BitcoinAddress(privateKey.toAddress());
         const bitcoinAddressFunding = new BitcoinAddress(privateKeyFunding.toAddress());
         const utxos = await Resolver.fetchUtxos(bitcoinAddressFunding.toString());
-        console.log('utxos for claim', utxos);
+        console.log('utxos for ' + bitcoinAddressFunding.toString(), utxos);
         // Construct the claim transaction which includes the name token and a fee burner token
         const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
         const publicKey = privateKey.publicKey
@@ -209,9 +209,12 @@ export class Name implements NameInterface {
                 satoshis: feeBurnerSatoshis,
             })
         });
+        console.log('transferTx before', transferTx);
         transferTx.from(utxos[0]);
         transferTx.change(bitcoinAddressFunding.toString());
-        const preimage = generatePreimage(true, transferTx, claimNftMinFee.lockingScript, claimTxObject.outputs[0].satoshis, sighashTypeAll);
+        console.log('claimNftMinFee.lockingScript', claimNftMinFee.lockingScript, claimNftMinFee.lockingScript.toHex().length);
+        console.log('claimTxObject.outputs[0].script', claimTxObject.outputs[0].script, claimTxObject.outputs[0].script.toHex().length);
+        const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
         const outputSizeWithLength = 'fd' + num2bin(superAssetNFT.lockingScript.toHex().length / 2, 2);
         console.log('outputSizeWithLength', outputSizeWithLength);
         const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
@@ -219,27 +222,31 @@ export class Name implements NameInterface {
         console.log('output.script', claimTxObject.outputs[0].script.toASM());
         console.log('output.satoshis', claimTxObject.outputs[0].satoshis);
         console.log('outputSatsWithSize', outputSatsWithSize);
-        console.log('isTransform', new Bool(false));
-        console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
-        console.log('unlock pubKey', new PubKey(toHex(publicKey)));
-        console.log('callback', callback);
-        const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll)
-        console.log('signTx sig', sig);
-        const script = claimNftMinFee.unlock(preimage,
+        console.log('receiveAddressWithBytes', '14' + privateKey.toAddress().toHex().substring(2));
+        console.log('publicKey', new PubKey(toHex(publicKey)));
+        console.log('nameOutputHash160', nameOutputHash160);
+        console.log('feeOutputHash160', feeOutputHash160);
+        console.log('superAssetNFT.lockingScript', superAssetNFT.lockingScript.toHex());
+        console.log('superAssetFeeBurner.lockingScript', superAssetFeeBurner.lockingScript.toHex());
+        const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote)
+        console.log('sig', sig);
+        const script = claimNftMinFee.unlock(
+            preimage,
             outputSatsWithSize,
             new Bytes('14' + privateKey.toAddress().toHex().substring(2)),
             sig,
             new PubKey(toHex(publicKey)),
             new Bytes(nameOutputHash160),
             new Bytes(feeOutputHash160)
-        ).toScript()
+        ).toScript();
+
         transferTx.setInputScript(0, script)
-            .sign(privateKeyFunding)
-            .seal()
-        console.log('this is the utxo claim', JSON.stringify(transferTx), transferTx.toString());
+        .sign(privateKeyFunding)
+        .seal()
+        console.log('Claim TX', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const result = await Resolver.sendTx(transferTx);
-        console.log('result of sendTx claim', result);
+        console.log('SendTx Reslt', result);
         return true;
     }
 

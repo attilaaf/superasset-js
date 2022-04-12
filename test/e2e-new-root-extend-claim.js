@@ -50,7 +50,7 @@ describe('Create new root, extend and claim bat', () => {
                const name = await resolver.getName('a');
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
-               const result = await name.claim(privateKeyStr, privateKeyStr); // By default
+               const result = await name.claim(privateKeyStr, privateKeyStr, name.callbackSignClaimInput, false); // By default
                console.log('result claim', result);
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses

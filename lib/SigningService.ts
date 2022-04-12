@@ -23,6 +23,7 @@ export class SigningService implements SigningServiceInterface {
             }
         } else {
             const tx = new bsv.Transaction(rawtx);
+            console.log('abouto to sign tx', tx);
             const sig = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType);
             return sig;
         }
