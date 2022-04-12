@@ -155,11 +155,13 @@ export class Name implements NameInterface {
         //  const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
         const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
         const claimTxObject = new bsv.Transaction(this.claimTx);
-        const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
+        const feeBurnerHex = getFeeBurner().lockingScript.toHex();
+        const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(feeBurnerHex, 'hex')).toString('hex');
         // Only hash the part after the parameters (last one is the pkh)
         const firstOutputScript = this.rootTx.outputs[0].script;
-        const lockingScriptHashedPart = getNameNFT(firstOutputScript.chunks[2].buf.toString('hex')).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
-        const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPart, 'hex')).toString('hex');
+        const lockingScriptHashedPartHex = getNameNFT(firstOutputScript.chunks[2].buf.toString('hex')).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
+        
+        const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPartHex, 'hex')).toString('hex');
         const claimNftMinFee = new SuperAssetNFTMinFeeClass(
             new Bytes(claimTxObject.hash + '00000000'),
             new Ripemd160(toHex(publicKeyHash)),
@@ -226,21 +228,75 @@ export class Name implements NameInterface {
         console.log('publicKey', new PubKey(toHex(publicKey)));
         console.log('nameOutputHash160', nameOutputHash160);
         console.log('feeOutputHash160', feeOutputHash160);
-        console.log('superAssetNFT.lockingScript', superAssetNFT.lockingScript.toHex());
-        console.log('superAssetFeeBurner.lockingScript', superAssetFeeBurner.lockingScript.toHex());
+        console.log('lockingScriptHashedPartHex', lockingScriptHashedPartHex);
+        console.log('feeBurnerHex', feeBurnerHex);
+        console.log('sighashTypeAll', num2bin(sighashTypeAll, 2));
+        const changeScriptHex = transferTx.outputs[2].script.toHex();
+        console.log('changeScriptHex', changeScriptHex);
+        const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
+        console.log('callbackInside changeOutput', changeOutput);
         const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote)
         console.log('sig', sig);
+        /*
+            .setInputScript(0, (tx, output) => {
+            const preimage = generatePreimage(true, tx, prevLockingScript, output.satoshis, sighashType);
+            // Update prev locking script
+            const outputSatsWithSize = new Bytes(num2bin(nftAmount, 8) + `${outputSize}24`);
+            console.log('preimage', preimage);
+            console.log('output.script', output.script.toASM());
+            console.log('output.satoshis', output.satoshis);
+            console.log('outputSatsWithSize', outputSatsWithSize);
+            console.log('isTransform', new Bool(false));
+            console.log('receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
+            console.log('unlock pubKey', new PubKey(toHex(publicKey)));
+            const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashType);
+            console.log('sig', sig);
+            return nft.unlock(preimage, outputSatsWithSize, new Bytes('14' + privateKey.toAddress().toHex().substring(2)), new Bool(false), sig, new PubKey(toHex(publicKey))).toScript()
+        })
+
+        */
         const script = claimNftMinFee.unlock(
             preimage,
             outputSatsWithSize,
             new Bytes('14' + privateKey.toAddress().toHex().substring(2)),
             sig,
             new PubKey(toHex(publicKey)),
-            new Bytes(nameOutputHash160),
-            new Bytes(feeOutputHash160)
+            new Bytes(lockingScriptHashedPartHex),
+            new Bytes(feeBurnerHex),
+            new Bytes(changeOutput)
         ).toScript();
 
-        transferTx.setInputScript(0, script)
+        //transferTx.setInputScript(0, script)
+        transferTx.setInputScript(0, (tx, output) => {
+            const preimage = generatePreimage(true, tx, claimTxObject.outputs[0].script, output.satoshis, sighashTypeAll);
+            // Update prev locking script
+           // const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
+            console.log('callbackInside preimage', preimage);
+            console.log('callbackInside output.script', output.script.toASM());
+            console.log('callbackInside output.satoshis', output.satoshis);
+            console.log('callbackInside outputSatsWithSize', outputSatsWithSize);
+            console.log('callbackInside isTransform', new Bool(false));
+            console.log('callbackInside receiveAddress', new Bytes(privateKey.toAddress().toHex().substring(2)));
+            console.log('callbackInside unlock pubKey', new PubKey(toHex(publicKey)));
+            console.log('callbackInside changeOutput', changeOutput);
+            //  const tx = new bsv.Transaction(rawtx);
+            //  console.log('abouto to sign tx', tx);
+            // const sig = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType);
+            // return sig;
+
+            const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
+            console.log('callbackInside sig', sig);
+            return claimNftMinFee.unlock(
+                preimage,
+                outputSatsWithSize,
+                new Bytes('14' + privateKey.toAddress().toHex().substring(2)),
+                sig,
+                new PubKey(toHex(publicKey)),
+                new Bytes(lockingScriptHashedPartHex),
+                new Bytes(feeBurnerHex),
+                new Bytes(changeScriptHex)
+            ).toScript()
+        })
         .sign(privateKeyFunding)
         .seal()
         console.log('Claim TX', JSON.stringify(transferTx), transferTx.toString());

@@ -75,8 +75,9 @@ contract SuperAssetNFTMinFee {
     * @param senderSig - The signature of the previous owner to authorize this update
     * @param unlockKey - The public key that belonged to the previous owner that is beng used to unlock
     * @param feeNFT - The NFT script of the miner fee token
+    * @param changeOutput - The change output to attach
     */
-    public function unlock(SigHashPreimage txPreimage, bytes outputSatsWithSize, bytes receiveAddressWithSize, Sig senderSig, PubKey unlockKey, bytes nameNFT, bytes feeBurner) {
+    public function unlock(SigHashPreimage txPreimage, bytes outputSatsWithSize, bytes receiveAddressWithSize, Sig senderSig, PubKey unlockKey, bytes nameNFT, bytes feeBurner, bytes changeOutput) {
         // Modify this contract to your needs but ensure that the resulting contract produces <assetid> <pkh> as the first two push datas
         // But following the convention that <assetid> <pkh> are the first two push datas then we have "polymorphism"
         // For example we can transform (using isTransform=true) to an auction script, and then transform back when there is a winning bid
@@ -95,7 +96,8 @@ contract SuperAssetNFTMinFee {
                 (this.assetid == num2bin(0, 36) ? txPreimage[ 68 : 104 ] : this.assetid) +
                 receiveAddressWithSize + 
                 nameNFT +
-                feeBurner
+                feeBurner +
+                changeOutput
             ) 
             ==
             txPreimage[len(txPreimage) - 40 : len(txPreimage) - 8] 
