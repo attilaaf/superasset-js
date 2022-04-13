@@ -1,5 +1,5 @@
 import * as bsv from 'bsv';
-import { toHex } from 'scryptlib/dist';
+import { num2bin, toHex } from 'scryptlib/dist';
 import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
 import { getPreimage } from 'scryptlib';
 
@@ -48,11 +48,21 @@ export function generatePreimage(isOpt, txLegacy, lockingScriptASM, satValue, si
     return preimage;
 }
 
+export const createOutputFromSatoshisAndHex = (satoshis: number, scriptHex: string): string => {
+    const len = scriptHex.length / 2;
+    let outputLen = '';
+    if (len < 255) {
+        outputLen = len.toString(16); // // num2bin(len, 2);
+    } else if (len >= 255) {
+        outputLen = 'fd' + num2bin(len, 2);
+    }
+    return num2bin(satoshis, 8) + outputLen + scriptHex;
+}
+
 export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> => {
     const script = tx.outputs[outputIndex].script;
     const satoshis = tx.outputs[outputIndex].satoshis;
-    const txId = tx.hash
-
+    const txId = tx.hash;
     const outputData: ExtensionOutputData = {
         bnsConstant: script.chunks[0].buf.toString('hex'),
         issuerPkh: script.chunks[1].buf.toString('hex'),
