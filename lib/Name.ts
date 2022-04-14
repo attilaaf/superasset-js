@@ -174,13 +174,6 @@ export class Name implements NameInterface {
         claimNftMinFee.replaceAsmVars(asmVarsAll);
         // Add claim as input
         const transferTx = new bsv.Transaction();
-        transferTx.addInput(new bsv.Transaction.Input({
-            prevTxId: claimTxObject.hash,
-            outputIndex: 0,
-            script: new bsv.Script(), // placeholder
-            output: claimTxObject.outputs[0],
-        }));
-
         // Construct the NFT to morph into, according to allowed nameNftHash
         const assetId = Buffer.from(claimTxObject.hash, 'hex').reverse().toString('hex') + '00000000';
         const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
@@ -198,15 +191,29 @@ export class Name implements NameInterface {
         const superAssetFeeBurner = new SuperAssetFeeBurnerClass(feeBurnerRefundAmount);
         superAssetFeeBurner.replaceAsmVars(asmVarsAll);
 
-        transferTx.setOutput(0, (tx) => {
-            console.log('setOutput 0 ');
+        transferTx.addInput(new bsv.Transaction.Input({
+            prevTxId: claimTxObject.hash,
+            outputIndex: 0,
+            script: new bsv.Script(), // placeholder
+            output: claimTxObject.outputs[0],
+        }))
+        .from(utxos)
+        .setOutput(0, (tx) => {
+            console.log('setOutput 0 ', tx);
             return new bsv.Transaction.Output({
                 script: superAssetNFT.lockingScript,
                 satoshis: claimTxObject.outputs[0].satoshis,
             });
         })
         .setOutput(1, (tx) => {
-            console.log('setOutput 1');
+            console.log('setOutput 1', tx);
+            return new bsv.Transaction.Output({
+                script: superAssetFeeBurner.lockingScript,
+                satoshis: feeBurnerSatoshis,
+            })
+        })
+        .setOutput(1, (tx) => {
+            console.log('setOutput 1xx', tx);
             return new bsv.Transaction.Output({
                 script: superAssetFeeBurner.lockingScript,
                 satoshis: feeBurnerSatoshis,
@@ -214,14 +221,17 @@ export class Name implements NameInterface {
         })
         .change(bitcoinAddressFunding.toString())
         .setInputScript(0, (tx, output) => {
-            console.log('setInputScript 0');
+            console.log('setInputScript 0', tx);
             const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
             const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
             const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
+            const changeSatoshis = num2bin(tx.getChangeAmount(), 8);
+
+            console.log('changeSatoshis', changeSatoshis);
             const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
-            if (transferTx.outputs.length < 2) {
+            /* if (transferTx.outputs.length < 2) {
                 return bsv.Script();
-            }
+            }*/
             const changeScriptHex = transferTx.outputs[2].script.toHex();
             const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
             const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
