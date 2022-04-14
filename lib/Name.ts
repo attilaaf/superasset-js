@@ -142,10 +142,8 @@ export class Name implements NameInterface {
             privateKeyFunding = new bsv.PrivateKey.fromWIF(fundingKey);
         }
         // Get a UTXO to create the claim TX, require at least 10,000 satoshis.
-        const bitcoinAddress = new BitcoinAddress(privateKey.toAddress());
         const bitcoinAddressFunding = new BitcoinAddress(privateKeyFunding.toAddress());
         const utxos = await Resolver.fetchUtxos(bitcoinAddressFunding.toString());
-        console.log('utxos for ' + bitcoinAddressFunding.toString(), utxos);
         // Construct the claim transaction which includes the name token and a fee burner token
         const SuperAssetNFTMinFeeClass = buildContractClass(SuperAssetNFTMinFee());
         const publicKey = privateKey.publicKey
@@ -190,64 +188,53 @@ export class Name implements NameInterface {
         const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
         const superAssetFeeBurner = new SuperAssetFeeBurnerClass(feeBurnerRefundAmount);
         superAssetFeeBurner.replaceAsmVars(asmVarsAll);
-
         transferTx.addInput(new bsv.Transaction.Input({
             prevTxId: claimTxObject.hash,
             outputIndex: 0,
             script: new bsv.Script(), // placeholder
             output: claimTxObject.outputs[0],
         }))
-        .from(utxos)
-        .setOutput(0, (tx) => {
-            console.log('setOutput 0 ', tx);
-            return new bsv.Transaction.Output({
-                script: superAssetNFT.lockingScript,
-                satoshis: claimTxObject.outputs[0].satoshis,
-            });
-        })
-        .setOutput(1, (tx) => {
-            console.log('setOutput 1', tx);
-            return new bsv.Transaction.Output({
-                script: superAssetFeeBurner.lockingScript,
-                satoshis: feeBurnerSatoshis,
+            .from(utxos)
+            .setOutput(0, (tx) => {
+                return new bsv.Transaction.Output({
+                    script: superAssetNFT.lockingScript,
+                    satoshis: claimTxObject.outputs[0].satoshis,
+                });
             })
-        })
-        .setOutput(1, (tx) => {
-            console.log('setOutput 1xx', tx);
-            return new bsv.Transaction.Output({
-                script: superAssetFeeBurner.lockingScript,
-                satoshis: feeBurnerSatoshis,
+            .setOutput(1, (tx) => {
+                return new bsv.Transaction.Output({
+                    script: superAssetFeeBurner.lockingScript,
+                    satoshis: feeBurnerSatoshis,
+                })
             })
-        })
-        .change(bitcoinAddressFunding.toString())
-        .setInputScript(0, (tx, output) => {
-            console.log('setInputScript 0', tx);
-            const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
-            const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
-            const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
-            const changeSatoshis = num2bin(tx.getChangeAmount(), 8);
-
-            console.log('changeSatoshis', changeSatoshis);
-            const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
-            /* if (transferTx.outputs.length < 2) {
-                return bsv.Script();
-            }*/
-            const changeScriptHex = transferTx.outputs[2].script.toHex();
-            const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-            const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
-            return claimNftMinFee.unlock(
-                preimage,
-                outputSatsWithSize,
-                receiveAddressWithSize,
-                sig,
-                new PubKey(toHex(publicKey)),
-                new Bytes(lockingScriptHashedPartHex),
-                new Bytes(feeBurnerOutputHex),
-                new Bytes(changeOutput) // changeScriptHex before?? wtf
-            ).toScript()
-        })
-        .sign(privateKeyFunding) // sign again,
-        .seal();
+            .setOutput(1, (tx) => {
+                return new bsv.Transaction.Output({
+                    script: superAssetFeeBurner.lockingScript,
+                    satoshis: feeBurnerSatoshis,
+                })
+            })
+            .change(bitcoinAddressFunding.toString())
+            .setInputScript(0, (tx, output) => {
+                const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
+                const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
+                const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
+                const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
+                const changeScriptHex = transferTx.outputs[2].script.toHex();
+                const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
+                const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
+                return claimNftMinFee.unlock(
+                    preimage,
+                    outputSatsWithSize,
+                    receiveAddressWithSize,
+                    sig,
+                    new PubKey(toHex(publicKey)),
+                    new Bytes(lockingScriptHashedPartHex),
+                    new Bytes(feeBurnerOutputHex),
+                    new Bytes(changeOutput) // changeScriptHex before?? wtf
+                ).toScript()
+            })
+            .sign(privateKeyFunding) // sign again,
+            .seal();
 
         console.log('Claim TX----------', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
