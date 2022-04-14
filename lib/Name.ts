@@ -162,6 +162,7 @@ export class Name implements NameInterface {
         const firstOutputScript = this.rootTx.outputs[0].script;
         const lockingScriptHashedPartHex = getNameNFT(firstOutputScript.chunks[2].buf.toString('hex')).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
         const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPartHex, 'hex')).toString('hex');
+        console.log('feeOutputHash160 ---:', feeOutputHash160);
         const claimNftMinFee = new SuperAssetNFTMinFeeClass(
             new Bytes(claimTxObject.hash + '00000000'),
             new Ripemd160(toHex(publicKeyHash)),
@@ -285,10 +286,12 @@ export class Name implements NameInterface {
 
         //transferTx.setInputScript(0, script)
         transferTx.setInputScript(0, (tx, output) => {
-            const preimage = generatePreimage(true, tx, claimTxObject.outputs[0].script, output.satoshis, sighashTypeAll);
+            const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
             // Update prev locking script
-           // const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
+            // const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSize}24`);
             console.log('callbackInside preimage', preimage);
+            console.log('callbackInside claimTxObject.outputs[0].script.toHex', claimTxObject.outputs[0].script.toHex());
+            console.log('callbackInside output.hex', output.script.toHex());
             console.log('callbackInside output.script', output.script.toASM());
             console.log('callbackInside output.satoshis', output.satoshis);
             console.log('callbackInside outputSatsWithSize', outputSatsWithSize);
@@ -296,12 +299,15 @@ export class Name implements NameInterface {
             console.log('callbackInside receiveAddressWithSize', receiveAddressWithSize);
             console.log('callbackInside unlock pubKey', new PubKey(toHex(publicKey)));
             console.log('callbackInside changeOutput', changeOutput);
-            //  const tx = new bsv.Transaction(rawtx);
+            //  const tx = new bsv.Transaction(rawtx);f
             //  console.log('abouto to sign tx', tx);
             // const sig = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType);
             // return sig;
 
+            //  const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote)
+            //   console.log('sig', sig);
             const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
+            //  const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
             console.log('callbackInside sig', sig);
             console.log('-----------------');
             console.log('outputSatsWithSize', outputSatsWithSize);

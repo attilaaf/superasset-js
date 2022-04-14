@@ -227,7 +227,7 @@ describe('Resolver', () => {
          expect(bnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
          // expect(bnsTx.getFeeRate()).to.eql(0.5000173858618172);
          // expect(bnsTx.getFee()).to.eql(14380); 
-         expect(bnsTx.getFeeRate()).to.eql(0.5);
+         expect(bnsTx.getFeeRate()).to.eql(0.5000173701580685);
          expect(bnsTx.getFee()).to.eql(14393); 
          return;
       }

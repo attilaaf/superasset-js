@@ -1,5 +1,5 @@
 import { buildContractClass, Bytes, num2bin, Ripemd160, toHex } from "scryptlib/dist";
-import { sighashType2Hex } from "../Helpers";
+import { createOutputFromSatoshisAndHex, sighashType2Hex } from "../Helpers";
 import * as bsv from 'bsv';
 import { SuperAssetNFT } from "./SuperAssetNFT";
 import { SuperAssetNFTMinFee } from "./SuperAssetNFTMinFee";
@@ -26,7 +26,9 @@ export function getNameNFT(claimPkh: string) {
 }
 
 export function getClaimNFT(claimPkh: string) {
-    const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(getFeeBurner().lockingScript.toHex(), 'hex')).toString('hex');
+    const feeBurnerHex = getFeeBurner().lockingScript.toHex();
+    const feeBurnerOutputHex = createOutputFromSatoshisAndHex(10000, feeBurnerHex);
+    const feeOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(feeBurnerOutputHex, 'hex')).toString('hex');
     // Only hash the part after the parameters (last one is the pkh)
     const lockingScriptHashedPart = getNameNFT(claimPkh).lockingScript.toHex().substring((1 + 36 + 1 + 20) * 2);
     const nameOutputHash160 = bsv.crypto.Hash.ripemd160(Buffer.from(lockingScriptHashedPart, 'hex')).toString('hex');
