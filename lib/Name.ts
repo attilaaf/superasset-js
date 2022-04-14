@@ -327,7 +327,6 @@ export class Name implements NameInterface {
             console.log('output0', output0);
             console.log('output1', output1);
             console.log('output2', output2);
-
             console.log('-----------------');
             return claimNftMinFee.unlock(
                 preimage,
@@ -340,7 +339,11 @@ export class Name implements NameInterface {
                 new Bytes(changeScriptHex)
             ).toScript()
         })
-        .sign(privateKeyFunding)
+        .sign(privateKeyFunding);
+
+        console.log('output2modded', num2bin(transferTx.outputs[2].satoshis, 8));
+
+        transferTx
         .seal()
         console.log('Claim TX', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
