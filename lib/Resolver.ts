@@ -151,7 +151,8 @@ export class Resolver implements ResolverInterface {
 
     static async sendTx(tx) {
         const hex = tx.toString();
-        if (!tx.checkFeeRate(500)) {
+        console.log('sendTx checkFee', hex);
+        if (!tx.checkFeeRate(250)) {
             throw new Error(`checkFeeRate fail, transaction fee is too low`)
         }
         try {

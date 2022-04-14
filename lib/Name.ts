@@ -249,10 +249,7 @@ export class Name implements NameInterface {
         console.log('lockingScriptHashedPartHex', lockingScriptHashedPartHex);
         console.log('feeBurnerOutputHex', feeBurnerOutputHex);
         console.log('sighashTypeAll', num2bin(sighashTypeAll, 2));
-        const changeScriptHex = transferTx.outputs[2].script.toHex();
-        console.log('changeScriptHex', changeScriptHex);
-        const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-        console.log('callbackInside changeOutput', changeOutput);
+        
         const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote)
         console.log('sig', sig);
         /*
@@ -273,18 +270,12 @@ export class Name implements NameInterface {
         })
 
         */
-        const script = claimNftMinFee.unlock(
-            preimage,
-            outputSatsWithSize,
-            new Bytes('14' + privateKey.toAddress().toHex().substring(2)),
-            sig,
-            new PubKey(toHex(publicKey)),
-            new Bytes(lockingScriptHashedPartHex),
-            new Bytes(feeBurnerOutputHex),
-            new Bytes(changeOutput)
-        ).toScript();
+        // Add the 
+        transferTx.FEE_PER_KB = 800;
+        transferTx.change(bitcoinAddressFunding.toString())
+        .sign(privateKeyFunding, Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_NONE | Signature.SIGHASH_FORKID);
+ 
 
-        //transferTx.setInputScript(0, script)
         transferTx.setInputScript(0, (tx, output) => {
             const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
             // Update prev locking script
@@ -298,7 +289,13 @@ export class Name implements NameInterface {
             console.log('callbackInside isTransform', new Bool(false));
             console.log('callbackInside receiveAddressWithSize', receiveAddressWithSize);
             console.log('callbackInside unlock pubKey', new PubKey(toHex(publicKey)));
+
+            const changeScriptHex = transferTx.outputs[2].script.toHex();
+            console.log('changeScriptHex', changeScriptHex);
+            const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
             console.log('callbackInside changeOutput', changeOutput);
+            
+        // console.log('callbackInside changeOutput', changeOutput);
             //  const tx = new bsv.Transaction(rawtx);f
             //  console.log('abouto to sign tx', tx);
             // const sig = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType);
@@ -327,6 +324,7 @@ export class Name implements NameInterface {
             console.log('output0', output0);
             console.log('output1', output1);
             console.log('output2', output2);
+
             console.log('-----------------');
             return claimNftMinFee.unlock(
                 preimage,
@@ -339,10 +337,6 @@ export class Name implements NameInterface {
                 new Bytes(changeScriptHex)
             ).toScript()
         })
-        .sign(privateKeyFunding);
-
-        console.log('output2modded', num2bin(transferTx.outputs[2].satoshis, 8));
-
         transferTx
         .seal()
         console.log('Claim TX', JSON.stringify(transferTx), transferTx.toString());
