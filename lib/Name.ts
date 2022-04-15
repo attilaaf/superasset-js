@@ -171,7 +171,27 @@ export class Name implements NameInterface {
         };
         claimNftMinFee.replaceAsmVars(asmVarsAll);
         // Add claim as input
+
         const transferTx = new bsv.Transaction();
+        const savedSetInputScript = bsv.Transaction.prototype.setInputScript;
+        // Patch the setInputScript to be able to accept an awaitable function
+        // Useful for making remote API calls for the signature
+        bsv.Transaction.prototype.setInputScript = async function (inputIndex, unlockScriptOrCallback: any) {
+            if (unlockScriptOrCallback instanceof Function) {
+                console.log('function here--------------------------', unlockScriptOrCallback)
+                const sc = await unlockScriptOrCallback(this, this.inputs[inputIndex].output);
+                console.log('sc', sc)
+                this.unlockScriptCallbackMap.set(inputIndex, unlockScriptOrCallback);
+                this.inputs[inputIndex].setScript(sc)
+            } else {
+                this.inputs[inputIndex].setScript(unlockScriptOrCallback)
+            }
+            this._updateChangeOutput()
+            return this;
+        }  
+
+        transferTx.FEE_PER_KB = 800;
+
         // Construct the NFT to morph into, according to allowed nameNftHash
         const assetId = Buffer.from(claimTxObject.hash, 'hex').reverse().toString('hex') + '00000000';
         const SuperAssetNFTClass = buildContractClass(SuperAssetNFT());
@@ -207,34 +227,52 @@ export class Name implements NameInterface {
                     satoshis: feeBurnerSatoshis,
                 })
             })
-            .setOutput(1, (tx) => {
-                return new bsv.Transaction.Output({
-                    script: superAssetFeeBurner.lockingScript,
-                    satoshis: feeBurnerSatoshis,
-                })
-            })
             .change(bitcoinAddressFunding.toString())
-            .setInputScript(0, (tx, output) => {
-                const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
-                const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
-                const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
-                const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
-                const changeScriptHex = transferTx.outputs[2].script.toHex();
-                const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-                const sig = signTx(tx, privateKey, output.script, output.satoshis, 0, sighashTypeAll);
-                return claimNftMinFee.unlock(
-                    preimage,
-                    outputSatsWithSize,
-                    receiveAddressWithSize,
-                    sig,
-                    new PubKey(toHex(publicKey)),
-                    new Bytes(lockingScriptHashedPartHex),
-                    new Bytes(feeBurnerOutputHex),
-                    new Bytes(changeOutput) // changeScriptHex before?? wtf
-                ).toScript()
-            })
-            .sign(privateKeyFunding) // sign again,
-            .seal();
+
+        console.log('befre input');
+        await transferTx.setInputScript(0, (tx, output) => {
+            console.log('calling set input script now');
+            const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
+            const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
+            const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
+            const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
+            const changeScriptHex = transferTx.outputs[2].script.toHex();
+            const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
+            const signingService: SigningService = new SigningService();
+
+            //const sig = await signingService.signTx(transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll);
+            const sig = signTx(transferTx, privateKey, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll);
+
+            console.log('preimage', preimage);
+            console.log('outputSatsWithSize', outputSatsWithSize);
+            console.log('receiveAddressWithSize', receiveAddressWithSize);
+            console.log('sig', sig);
+            console.log('publicKey', publicKey);
+            console.log('lockingScriptHashedPartHex', lockingScriptHashedPartHex);
+            console.log('feeBurnerOutputHex', feeBurnerOutputHex);
+            console.log('changeOutput', changeOutput);
+            return claimNftMinFee.unlock(
+                preimage,
+                outputSatsWithSize,
+                receiveAddressWithSize,
+                sig,
+                new PubKey(toHex(publicKey)),
+                new Bytes(lockingScriptHashedPartHex),
+                new Bytes(feeBurnerOutputHex),
+                new Bytes(changeOutput) // changeScriptHex before?? wtf
+            ).toScript();
+        });
+        console.log('after input');
+        transferTx.sign(privateKeyFunding)
+        .seal();
+
+        // Restore the set input script
+        bsv.Transaction.prototype.setInputScript = savedSetInputScript
+
+        //transferTx
+        // .seal();
+
+        console.log('after sign', transferTx, transferTx.toString());
 
         console.log('Claim TX----------', JSON.stringify(transferTx), transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
