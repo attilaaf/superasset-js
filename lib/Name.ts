@@ -254,7 +254,7 @@ export class Name implements NameInterface {
             const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
             const changeScriptHex = transferTx.outputs[2].script.toHex();
             const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-            const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, false);
+            const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
             console.log('receiveAddressWithSize', receiveAddressWithSize);
@@ -283,9 +283,11 @@ export class Name implements NameInterface {
         bsv.Transaction.prototype.seal = savedSeal;
         console.log('\n\nClaim TX: ', transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
-        const result = await Resolver.sendTx(transferTx);
-        console.log('SendTx result', result);
-        return true;
+        const txid = await Resolver.sendTx(transferTx);
+        return {
+            success: true,
+            txid
+        };
     }
 
     public isClaimed(): boolean {

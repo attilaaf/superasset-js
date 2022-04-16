@@ -111,7 +111,6 @@ export class TreeProcessor implements TreeProcessorInterface {
         }
 
         const rootTx = new bsv.Transaction(rawtxs[0]);
-        console.log('rawtxs', rawtxs.length);
         let prefixMap = {};
         prefixMap[`${rootTx.hash + '00000000'}`] = rootTx;
         let nameString = '';
@@ -135,7 +134,6 @@ export class TreeProcessor implements TreeProcessorInterface {
                 }
                 if (i > 1) {
                     nameString += lastExtensionOutput.char; // Add the current letter that was spent
-                    console.log('nameString', nameString);
                 }
                 // Clear off the map to ensure a rawtx must spend something directly of it's parent
                 prefixMap = {};

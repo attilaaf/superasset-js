@@ -76,7 +76,7 @@ export class Resolver implements ResolverInterface {
     }
 
     static generateBnsRoot(issuerPkh: string, claimPkh: string) {
-        
+
         let prevDupHash = '0000000000000000000000000000000000000000';
         let currentDimension = 20;
         const BNS = buildContractClass(SuperAssetBNS(true));
@@ -151,24 +151,57 @@ export class Resolver implements ResolverInterface {
 
     static async sendTx(tx) {
         const hex = tx.toString();
-        console.log('sendTx checkFee', hex);
         if (!tx.checkFeeRate(250)) {
             throw new Error(`checkFeeRate fail, transaction fee is too low`)
         }
         try {
-            const {
-                data: txid
-            } = await axios.default.post(`${API_PREFIX}/tx/raw`, {
+            const { data } = await axios.default.post(`${API_PREFIX}/tx/raw`, {
                 txhex: hex
             });
-
-            return txid
+            return data;
         } catch (error: any) {
             if (error.response && error.response.data === '66: insufficient priority') {
                 throw new Error(`Rejected by miner. Transaction with fee is too low. hex: ${hex}`)
+            }
+            if (error.response && /txn.mempool.conflict/.test(error.response.data)) {
+                //throw new Error(`Mempool conflict. hex: ${hex}`)
+                console.log('Mempol conflict detected, checking for tx...')
+                if (await Resolver.isTxExist(tx.hash)) {
+                    return tx.hash;
+                }
+            }
+            if (error.response && /already/.test(error.response.data)) {
+                if (await Resolver.isTxExist(tx.hash)) {
+                    return tx.hash;
+                }
+            }
+            if (error.response && /No.previous.output.information/.test(error.response.data)) {
+                if (await Resolver.isTxExist(tx.hash)) {
+                    return tx.hash;
+                }
             }
             throw error
         }
     }
 
+    static async getTx(txid: string) {
+        try {
+            const { data } = await axios.default.get(`${API_PREFIX}/tx/hash/${txid}`);
+            return data;
+        } catch (error: any) {
+            if (error.response && /already/.test(error.response.data)) {
+                throw new Error(error.response.data)
+            }
+            throw error
+        }
+    }
+
+    static async isTxExist(txid: string) {
+        try {
+            const { data } = await axios.default.get(`${API_PREFIX}/tx/hash/${txid}`);
+            return true;
+        } catch (error: any) {
+            return false;
+        }
+    }
 }
