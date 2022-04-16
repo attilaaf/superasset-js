@@ -22,8 +22,6 @@ export interface NameInterface {
         privateKeyFunding: string | bsv.PrivateKey,
         callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
     ) => Promise<any>;
-    // Get the claim fee required
-    claimFee: (name: string) => Promise<{ claimFee: number, claimFeeAddress: string }>;
     // Whether there was a spend of the claim tx
     isClaimed: () => boolean;
     // The root of this name tree

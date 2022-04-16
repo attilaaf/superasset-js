@@ -13,6 +13,7 @@ import * as axios from 'axios';
 import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 import { getClaimNFTOutput } from "./contracts/ContractBuilder";
 import { API_PREFIX, bnsConstant, BNS_API_URL, BNS_ROOT } from "./Constants";
+import { InvalidNameError } from "./errors/Errors";
 const { buildContractClass, Ripemd160, bsv, Bytes } = require('scryptlib');
 const sighashType2Hex = s => s.toString(16)
 const Signature = bsv.crypto.Signature;
@@ -199,6 +200,18 @@ export class Resolver implements ResolverInterface {
             return true;
         } catch (error: any) {
             return false;
+        }
+    }
+
+    static async getNameClaimFee(name: string): Promise<{ success: boolean, claimFee: number, claimFeeAddress: string }>  {
+        if (!name || name.length === 0) {
+            throw new InvalidNameError();
+        }
+        let res: any = await axios.default.get(`${BNS_API_URL}/claimFee/${name}`)
+        return {
+            success: res.data.success,
+            claimFee: res.data.claimFee,
+            claimFeeAddress: res.data.claimFeeAddress
         }
     }
 }

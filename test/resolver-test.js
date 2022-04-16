@@ -54,7 +54,6 @@ describe('Resolver', () => {
    });
 
    it('#getName should succeed matched default root', async () => {
-      const tx = new bsv.Transaction(rootTx);
       const resolver = index.Resolver.create({
          processGetNameTransactions: function(name, cfg) {
             return {
@@ -67,6 +66,40 @@ describe('Resolver', () => {
       });
       const name = await resolver.getName('b');
       expect(name.getNameString()).to.eql('b');
+   });
+
+   it('#getNameClaimFee should fail empty name', async () => {
+      try {
+         await index.Resolver.getNameClaimFee('')
+      } catch (err){
+         expect(err instanceof index.InvalidNameError).to.be.true;
+         return;
+      }
+      expect(false).to.be.true;
+   });
+
+   it('#getNameClaimFee should succeed', async () => {
+      let result = await index.Resolver.getNameClaimFee('a');
+      expect(result.success).to.eql(true);
+      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFeeAddress).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
+
+      result = await index.Resolver.getNameClaimFee('ab');
+      expect(result.success).to.eql(true);
+      expect(result.claimFee).to.eql(100000);
+
+      result = await index.Resolver.getNameClaimFee('abc');
+      expect(result.success).to.eql(true);
+      expect(result.claimFee).to.eql(100000);
+
+      result = await index.Resolver.getNameClaimFee('abcd');
+      expect(result.success).to.eql(true);
+      expect(result.claimFee).to.eql(100000);
+
+      result = await index.Resolver.getNameClaimFee('abcde');
+      expect(result.success).to.eql(true);
+      expect(result.claimFee).to.eql(100000);
+ 
    });
 
    it('#getName should fail invalid transactions due to invalid different name', async () => {

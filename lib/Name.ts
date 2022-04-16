@@ -127,15 +127,6 @@ export class Name implements NameInterface {
         const sig = await signingService.signTx(prefixRawtxs, rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
     }
-
-    public async claimFee(name: string): Promise<{ claimFee: number, claimFeeAddress: string }> {
-        let res: any = await axios.default.get(`${API_PREFIX}/claimFee/${name}`)
-        return {
-            claimFee: res.data.claimFee,
-            claimFeeAddress: res.data.claimFeeAddress
-        }
-    }
-
     public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
         this.ensureInit();
         if (this.isClaimed()) {
