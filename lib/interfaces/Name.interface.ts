@@ -20,7 +20,7 @@ export interface NameInterface {
     claim: (
         privateKey: string | bsv.PrivateKey,
         privateKeyFunding: string | bsv.PrivateKey,
-        callback?: (rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
+        callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
     ) => Promise<any>;
     // Whether there was a spend of the claim tx
     isClaimed: () => boolean;

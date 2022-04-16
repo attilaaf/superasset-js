@@ -1,7 +1,6 @@
 import { ParameterMissingError } from ".";
 import { PrefixChainMismatchError } from "./errors/PrefixChainMismatchError";
-import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
-import { parseExtensionOutputData, parseExtensionOutputData2, prevOutpointFromTxIn } from "./Helpers";
+import { parseExtensionOutputData, parseExtensionOutputData2, PrefixParseResult, prevOutpointFromTxIn, validatePrefixTree } from "./Helpers";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError, InvalidDupHashError } from "./errors/OutputErrors";
@@ -9,78 +8,10 @@ import { bsv } from "scryptlib";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
 import { letters } from "./Constants";
 
-/**
- * Process the transaction tree
- */
 export class TreeProcessor implements TreeProcessorInterface {
+
     public async validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
-        const rootTx = new bsv.Transaction(rawtxs[0]);
-        const calculatedRoot = rootTx.hash;
-        let prefixMap = {};
-        prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
-        let nameString = '';
-        let prevPotentialClaimNft = '';
-        let prevTx = rootTx;
-
-        // todo: We MUST validate that the root (first tx) is the actual root
-        const rootExtOutputData: ExtensionOutputData | null = await parseExtensionOutputData(rootTx, 0);
-        if (!rootExtOutputData || rootExtOutputData.charHex !== 'ff') {
-            throw new Error('Expected first transaction to be root BNS tree');
-        }
-        for (let i = 1; i < rawtxs.length; i++) {
-            const tx = new bsv.Transaction(rawtxs[i]);
-            const txid = tx.hash;
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
-            // Enforce that each spend in the chain spends something from before
-            if (!prefixMap[prevOutpoint]) {
-                // Perhaps this is the claimNFT being spent?
-                if (prevPotentialClaimNft === prevOutpoint) {
-                    // Found a spend of a claim, return the position of the previous index then
-                    // Return because we have successfully resolved the prefix tree to the location of the claim NFT that was spent.
-                    return {
-                        rawtxIndexForClaim: i - 1,
-                        nameString,
-                        isClaimed: true,
-                    }
-                } else {
-                    throw new PrefixChainMismatchError();
-                }
-            } else {
-                // Do not concat the root node, skip it
-                if (i > 1) {
-                    const prevTxOut = prevTx.outputs[outputIndex];
-                    const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
-                    nameString += letter; // Add the current letter that was spent
-                }
-            }
-            // Clear off the map to ensure a rawtx must spend something directly of it's parent
-            prefixMap = {};
-            prevPotentialClaimNft = txid + '00000000'; // Potential NFT is always at position 1
-            for (let o = 1; o < 38; o++) {
-                const buf = Buffer.allocUnsafe(4);
-                buf.writeInt32LE(o);
-                const outNumString = buf.toString('hex');
-                prefixMap[txid + outNumString] = tx.outputs[o];
-            }
-            prevTx = tx;
-        }
-
-        if (rawtxs.length === 1) {
-            return {
-                rawtxIndexForClaim: -1,
-                nameString,
-                isClaimed: false,
-            }
-        }
-
-        if (nameString === '') {
-            // throw new ParameterListInsufficientSpendError();
-        }
-        return {
-            rawtxIndexForClaim: rawtxs.length - 1,
-            nameString,
-            isClaimed: false,
-        }
+         return validatePrefixTree(rawtxs);
     }
 
     public async getRequiredTransactionPartial(name: string, rawtxs: string[]): Promise<RequiredTransactionPartialResult> {

@@ -1,4 +1,4 @@
 export interface SigningServiceInterface { 
-    signTx: (rawtx: string, lockScript, lockSatoshis, inputIndex, sighashType) => any;
+    signTx: (prefixRawtxs: string[], rawtx: string, lockScript, lockSatoshis, inputIndex, sighashType) => any;
 }
   

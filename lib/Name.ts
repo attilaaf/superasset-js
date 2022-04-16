@@ -9,8 +9,7 @@ import * as bsv from 'bsv';
 import { ParameterExpectedRootMismatchError } from "./errors/ParameterExpectedRootMismatchError";
 import { NotInitError } from "./errors/NotInitError";
 import { RootOutputHashMismatchError } from "./errors/RootOutputHashMismatchError";
-import { PrefixParseResult } from "./interfaces/PrefixParseResult.interface";
-import { createOutputFromSatoshisAndHex, generatePreimage, prevOutpointFromTxIn, sighashType2Hex } from "./Helpers";
+import { createOutputFromSatoshisAndHex, generatePreimage, PrefixParseResult, prevOutpointFromTxIn, sighashType2Hex } from "./Helpers";
 import { NameInfo } from "./interfaces/NameInfo.interface";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
@@ -114,6 +113,7 @@ export class Name implements NameInterface {
     /**
      * Helper callback method to be able to test and swap out implementations of signing of a claim input
      * 
+     * @param prefixRawtxs Prefix rawtxs
      * @param rawtx Rawtx to sign
      * @param script Input script to sign
      * @param satoshis Satoshis of the input
@@ -121,9 +121,9 @@ export class Name implements NameInterface {
      * @param sighashType Sighash type to sign with. Usually SIGHASH_ALL for this type of tx
      * @returns 
      */
-    public async callbackSignClaimInput(rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number, isRemote = true): Promise<any> {
+    public async callbackSignClaimInput(prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number, isRemote = true): Promise<any> {
         const signingService = new SigningService();
-        const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, isRemote);
+        const sig = await signingService.signTx(prefixRawtxs, rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
     }
 
@@ -254,7 +254,7 @@ export class Name implements NameInterface {
             const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
             const changeScriptHex = transferTx.outputs[2].script.toHex();
             const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-            const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
+            const sig = await callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
             console.log('receiveAddressWithSize', receiveAddressWithSize);
@@ -263,7 +263,6 @@ export class Name implements NameInterface {
             console.log('lockingScriptHashedPartHex', lockingScriptHashedPartHex);
             console.log('feeBurnerOutputHex', feeBurnerOutputHex);
             console.log('changeOutput', changeOutput);
-
             const unlockScript = claimNftMinFee.unlock(
                 preimage,
                 outputSatsWithSize,

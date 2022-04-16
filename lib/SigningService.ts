@@ -7,12 +7,13 @@ import * as axios from 'axios';
 export class SigningService implements SigningServiceInterface {
     constructor(private opts?: { testnet: boolean }) {
     }
-    public async signTx(rawtx: string, lockScript, lockSatoshis, inputIndex, sighashType, remote = false): Promise<any> {
+    public async signTx(prefixRawtxs: string[], claimRawtx: string, lockScript, lockSatoshis, inputIndex, sighashType, remote = false): Promise<any> {
         if (remote) {
            let sig1: any = null;
             try {
                 const res: any = await axios.default.post(`${process.env.API_SERVICE_URL}/api/sign`, {
-                    rawtx,
+                    prefixRawtxs,
+                    claimRawtx,
                     lockScript: lockScript.toHex(),
                     lockSatoshis,
                     inputIndex,
@@ -24,7 +25,7 @@ export class SigningService implements SigningServiceInterface {
                 throw error
             }
         } else {
-            const tx = new bsv.Transaction(rawtx);
+            const tx = new bsv.Transaction(claimRawtx);
             let sig2 = await signTx(tx, privateKey, lockScript/*lockScript.toASM()*/, lockSatoshis, inputIndex, sighashType); 
             return sig2;
         }

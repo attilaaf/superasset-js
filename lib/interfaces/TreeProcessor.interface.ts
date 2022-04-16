@@ -1,5 +1,5 @@
 
-import { PrefixParseResult } from "./PrefixParseResult.interface";
+import { PrefixParseResult } from "../Helpers";
 import { RequiredTransactionPartialResult } from "./RequiredTransactionPartialResult.interface"; 
 export interface TreeProcessorInterface { 
     // Parse rawtxs to get the prefix tree represented
