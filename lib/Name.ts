@@ -15,7 +15,7 @@ import { NameInfo } from "./interfaces/NameInfo.interface";
 import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
 import { TreeProcessor } from "./TreeProcessor";
 import { Resolver } from "./Resolver";
-import { Bool, buildContractClass, Bytes, num2bin, PubKey, Ripemd160, signTx, toHex } from "scryptlib/dist";
+import { buildContractClass, Bytes, num2bin, PubKey, Ripemd160, toHex } from "scryptlib/dist";
 import { SuperAssetNFTMinFee } from "./contracts/SuperAssetNFTMinFee";
 import { SigningService } from "./SigningService";
 import { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
@@ -122,7 +122,6 @@ export class Name implements NameInterface {
      * @returns 
      */
     public async callbackSignClaimInput(rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number, isRemote = true): Promise<any> {
-        console.log('callbackSignClaimInput');
         const signingService = new SigningService();
         const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
@@ -137,7 +136,6 @@ export class Name implements NameInterface {
         if (typeof key === 'string' || key instanceof String) {
             privateKey = new bsv.PrivateKey.fromWIF(key);
         }
-
         let privateKeyFunding = fundingKey;
         if (typeof fundingKey === 'string' || fundingKey instanceof String) {
             privateKeyFunding = new bsv.PrivateKey.fromWIF(fundingKey);
@@ -172,82 +170,41 @@ export class Name implements NameInterface {
         };
         claimNftMinFee.replaceAsmVars(asmVarsAll);
         // Add claim as input
-
         const transferTx = new bsv.Transaction();
         const savedSetInputScript = bsv.Transaction.prototype.setInputScript;
-
         async function asyncMapForEach(theMap, callback) {
-
-            console.log('asyncForEach start', theMap);
             const keys = theMap.keys();
-            console.log('asyncForEach keys: ', keys);
             for (const [key, value] of theMap.entries()) {
-           // for (let index = 0; index < keys.length; index++) {
-                console.log('asyncForEach item ' + key);
                 await callback(value, key, theMap);
-                console.log('asyncForEach item end ' + key);
             }
-
-            console.log('asyncForEach end');
         }
-
         // Patch the setInputScript to be able to accept an awaitable function
         // Useful for making remote API calls for the signature
         bsv.Transaction.prototype.setInputScript = async function (inputIndex, unlockScriptOrCallback: any) {
-            console.log('setInputScript 0');
             if (unlockScriptOrCallback instanceof Function) {
-                console.log('setInputScript 1', unlockScriptOrCallback)
                 const sc = await unlockScriptOrCallback(this, this.inputs[inputIndex].output);
-                console.log('sc', sc)
-                console.log('setInputScript 2');
                 this.unlockScriptCallbackMap.set(inputIndex, unlockScriptOrCallback);
-                console.log('setInputScript 3');
                 this.inputs[inputIndex].setScript(sc)
-                console.log('setInputScript 4');
             } else {
-                console.log('setInputScript 5a');
                 this.inputs[inputIndex].setScript(unlockScriptOrCallback)
-                console.log('setInputScript 5b');
             }
-            console.log('setInputScript 6');
             this._updateChangeOutput()
-            console.log('setInputScript 7');
             return this;
         }
 
         const savedSeal = bsv.Transaction.prototype.seal;
         bsv.Transaction.prototype.seal = async function () {
-            console.log('seal start')
             const self = this;
-
             this.outputCallbackMap.forEach(function (outputCallback, key) {
                 self.outputs[key] = outputCallback(self)
             })
-
-            console.log('this.unlockScriptCallbackMap.forEach start')
-
             await asyncMapForEach(this.unlockScriptCallbackMap, async (unlockScriptCallback, key) => {
-                console.log('inside a foreach start from seal')
                 self.inputs[key].setScript(await unlockScriptCallback(self, self.inputs[key].output))
-                console.log('inside a foreach end from seal')
             });
-
-            /*  await this.unlockScriptCallbackMap.forEach(async function (unlockScriptCallback, key) {
-                console.log('inside a foreach start')
-                self.inputs[key].setScript(await unlockScriptCallback(self, self.inputs[key].output))
-                console.log('inside a foreach end')
-            })*/
-
-            console.log('this.unlockScriptCallbackMap.forEach end')
-
             if (this._privateKey) {
                 this.sign(this._privateKey, this._sigType)
             }
-
             this.isSeal = true;
-
-            console.log('seal end')
-
             return this;
         }
 
@@ -290,27 +247,14 @@ export class Name implements NameInterface {
             })
             .change(bitcoinAddressFunding.toString())
 
-        console.log('setInputScript BEFORE BLOCK');
         await transferTx.setInputScript(0, async (tx, output) => {
-            console.log('setInputScript START');
             const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
             const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
             const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
             const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
             const changeScriptHex = transferTx.outputs[2].script.toHex();
             const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-            //const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, false);
-            const signingService = new SigningService();
-            console.log('transferTx', transferTx, transferTx.toString());
-            const sig = await signingService.signTx(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, true);
-
-            //const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, false);
-            //const sig = signTx(transferTx, privateKey, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll);
-
-            // const signingService = new SigningService();
-            // const sig = await signingService.signTx(rawtx, script, satoshis, inputIndex, sighashType, isRemote);
-
-
+            const sig = await callback(transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, false);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
             console.log('receiveAddressWithSize', receiveAddressWithSize);
@@ -330,31 +274,17 @@ export class Name implements NameInterface {
                 new Bytes(feeBurnerOutputHex),
                 new Bytes(changeOutput) // changeScriptHex before?? wtf
             ).toScript();
-            console.log('setInputScript END');
             return unlockScript;
         });
-
-        console.log('setInputScript AFTER BLOCK');
-
-        console.log('transferTx.sign(privateKeyFunding) before');
-
         transferTx.sign(privateKeyFunding)
-
-        console.log('transferTx.sign(privateKeyFunding) after');
-
         await transferTx.seal();
-        console.log('Sealed now.');
-
         // Restore the set input script
         bsv.Transaction.prototype.setInputScript = savedSetInputScript
         bsv.Transaction.prototype.seal = savedSeal;
-        //transferTx
-        // .seal();
-
-        console.log('\n\nClaim TX: ', JSON.stringify(transferTx), transferTx.toString());
+        console.log('\n\nClaim TX: ', transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const result = await Resolver.sendTx(transferTx);
-        console.log('SendTx Reslt', result);
+        console.log('SendTx result', result);
         return true;
     }
 
