@@ -20,7 +20,8 @@ import { SigningService } from "./SigningService";
 import { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
 import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 import { SuperAssetNFT } from "./contracts/SuperAssetNFT";
-import { feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
+import { API_PREFIX, feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
+import * as axios from 'axios';
 
 export class Name implements NameInterface {
     private initialized = false;                // Whether it is initialized
@@ -125,6 +126,14 @@ export class Name implements NameInterface {
         const signingService = new SigningService();
         const sig = await signingService.signTx(prefixRawtxs, rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
+    }
+
+    public async claimFee(name: string): Promise<{ claimFee: number, claimFeeAddress: string }> {
+        let res: any = await axios.default.get(`${API_PREFIX}/claimFee/${name}`)
+        return {
+            claimFee: res.data.claimFee,
+            claimFeeAddress: res.data.claimFeeAddress
+        }
     }
 
     public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
@@ -252,8 +261,12 @@ export class Name implements NameInterface {
             const outputSizeWithLength = (superAssetNFT.lockingScript.toHex().length / 2).toString(16);
             const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
             const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
+            
+            
             const changeScriptHex = transferTx.outputs[2].script.toHex();
             const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
+           
+            
             const sig = await callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);

@@ -50,3 +50,7 @@ export const letterOutputSatoshisInt = 800;
 export const feeBurnerSatoshis = 10000;
 
 export const bnsConstant = Buffer.from('bns1', 'utf8').toString('hex');
+
+export const API_PREFIX = process.env.NETWORK === 'mainnet' ? 'https://api.whatsonchain.com/v1/bsv/main' : 'https://api.whatsonchain.com/v1/bsv/test';
+export const BNS_ROOT = 'b72470fb23eb5f90dceda5a376869702af2e6605824f3cb2e0cf588f0c559514';
+export const BNS_API_URL = 'https://resolver.based.org/api/v1';
