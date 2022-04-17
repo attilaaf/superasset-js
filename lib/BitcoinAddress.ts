@@ -3,8 +3,8 @@ import * as bsv2 from 'bsv2';
 export class BitcoinAddress {
     constructor(private address: bsv2.Address) {
     }
-
-    static fromString(address: string, isTestnet = false): BitcoinAddress {
+    static fromString(address: string): BitcoinAddress {
+        const isTestnet = address.charAt(0) === '2' || address.charAt(0) === 'm';
         if (isTestnet) {
             return new BitcoinAddress(bsv2.Address.Testnet.fromString(address));
         } else {

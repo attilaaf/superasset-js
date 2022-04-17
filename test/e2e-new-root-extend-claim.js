@@ -51,10 +51,21 @@ describe('Create new root, extend and claim bat', () => {
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
 
+               try {
+                  // It should fail bcause the max claim fee is non zero (but insufficient)
+                  await name.claim(privateKeyStr, privateKeyStr, 1, name.callbackSignClaimInput, true); // By default
+                  expect(true).to.be.false;
+               }
+               catch (err) {
+                  if (!(err instanceof index.MaxClaimFeeExceededError)) {
+                     console.log('Unexpected exception caught', err);
+                  }
+                  expect(err instanceof index.MaxClaimFeeExceededError).to.be.true;
+               }
                // It should reject when the backend says it needs more.
-               const result = await name.claim(privateKeyStr, privateKeyStr, name.callbackSignClaimInput, true); // By default
+               const result = await name.claim(privateKeyStr, privateKeyStr, 0, name.callbackSignClaimInput, true); // By default
                console.log('Claim Result', result);
-               
+
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
                await name.update([

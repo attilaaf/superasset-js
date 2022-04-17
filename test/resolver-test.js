@@ -81,24 +81,24 @@ describe('Resolver', () => {
    it('#getNameClaimFee should succeed', async () => {
       let result = await index.Resolver.getNameClaimFee('a');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFee).to.eql(10000);
       expect(result.claimFeeAddress).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
 
       result = await index.Resolver.getNameClaimFee('ab');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFee).to.eql(10000);
 
       result = await index.Resolver.getNameClaimFee('abc');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFee).to.eql(10000);
 
       result = await index.Resolver.getNameClaimFee('abcd');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFee).to.eql(10000);
 
       result = await index.Resolver.getNameClaimFee('abcde');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(100000);
+      expect(result.claimFee).to.eql(10000);
  
    });
 
@@ -260,8 +260,15 @@ describe('Resolver', () => {
          expect(bnsTx.getTotalSatoshisExcludingChange()).to.eql(outputSats);
          // expect(bnsTx.getFeeRate()).to.eql(0.5000173858618172);
          // expect(bnsTx.getFee()).to.eql(14380); 
-         expect(bnsTx.getFeeRate()).to.eql(0.5000173701580685);
-         expect(bnsTx.getFee()).to.eql(14393); 
+         //0.5000361977846955 expect(bnsTx.getFeeRate()).to.eql(0.5000173701580685);
+         const fees = {
+            getFeeRate: bnsTx.getFeeRate(),
+            getFee: bnsTx.getFee()
+         }
+         expect(fees).to.eql({
+            getFeeRate: 0.5000173701580685,
+            getFee: 14393,
+         });
          return;
       }
       expect(false).to.be.true;

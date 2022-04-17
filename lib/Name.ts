@@ -22,6 +22,7 @@ import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 import { SuperAssetNFT } from "./contracts/SuperAssetNFT";
 import { API_PREFIX, feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
 import * as axios from 'axios';
+import { MaxClaimFeeExceededError } from "./errors/Errors";
 
 export class Name implements NameInterface {
     private initialized = false;                // Whether it is initialized
@@ -127,7 +128,7 @@ export class Name implements NameInterface {
         const sig = await signingService.signTx(prefixRawtxs, rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
     }
-    public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
+    public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, maxClaimFee: number = 0, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
         this.ensureInit();
         if (this.isClaimed()) {
             throw new Error('Name already claimed')
@@ -140,6 +141,13 @@ export class Name implements NameInterface {
         if (typeof fundingKey === 'string' || fundingKey instanceof String) {
             privateKeyFunding = new bsv.PrivateKey.fromWIF(fundingKey);
         }
+        const claimInfo = await Resolver.getNameClaimFee(this.nameString);        
+        console.log('claimInfo', claimInfo);
+
+        if (maxClaimFee && claimInfo.claimFee > maxClaimFee) {
+            throw new MaxClaimFeeExceededError('Cannot claim because max')
+        }
+ 
         // Get a UTXO to create the claim TX, require at least 10,000 satoshis.
         const bitcoinAddressFunding = new BitcoinAddress(privateKeyFunding.toAddress());
         const utxos = await Resolver.fetchUtxos(bitcoinAddressFunding.toString());
@@ -245,7 +253,14 @@ export class Name implements NameInterface {
                     satoshis: feeBurnerSatoshis,
                 })
             })
-            .change(bitcoinAddressFunding.toString())
+        // If there is a claim fee, then ensure that it is attached as an output
+        transferTx.setOutput(2, (tx) => {
+            return new bsv.Transaction.Output({
+                script: bsv.Script.fromASM(BitcoinAddress.fromString(claimInfo.claimFeeAddress).toP2PKH()),
+                satoshis: claimInfo.claimFee
+            })
+        })
+        transferTx.change(bitcoinAddressFunding.toString())
 
         await transferTx.setInputScript(0, async (tx, output) => {
             const receiveAddressWithSize = new Bytes('14' + privateKey.toAddress().toHex().substring(2));
@@ -253,11 +268,13 @@ export class Name implements NameInterface {
             const outputSatsWithSize = new Bytes(num2bin(claimTxObject.outputs[0].satoshis, 8) + `${outputSizeWithLength}24`);
             const preimage = generatePreimage(true, transferTx, claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, sighashTypeAll);
             
-            
-            const changeScriptHex = transferTx.outputs[2].script.toHex();
-            const changeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
-           
-            
+            const claimFeeScriptHex = transferTx.outputs[2].script.toHex();
+            const claimFeeOutput = num2bin(transferTx.outputs[2].satoshis, 8) + num2bin(claimFeeScriptHex.length / 2, 1) + claimFeeScriptHex;
+
+            const changeScriptHex = transferTx.outputs[3].script.toHex();
+            const changeOutput = num2bin(transferTx.outputs[3].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
+            const extraOutputs = claimFeeOutput + changeOutput;
+
             const sig = await callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
@@ -267,6 +284,7 @@ export class Name implements NameInterface {
             console.log('lockingScriptHashedPartHex', lockingScriptHashedPartHex);
             console.log('feeBurnerOutputHex', feeBurnerOutputHex);
             console.log('changeOutput', changeOutput);
+            console.log('extraOutputs', extraOutputs);
             const unlockScript = claimNftMinFee.unlock(
                 preimage,
                 outputSatsWithSize,
@@ -275,7 +293,7 @@ export class Name implements NameInterface {
                 new PubKey(toHex(publicKey)),
                 new Bytes(lockingScriptHashedPartHex),
                 new Bytes(feeBurnerOutputHex),
-                new Bytes(changeOutput) // changeScriptHex before?? wtf
+                new Bytes(extraOutputs)  
             ).toScript();
             return unlockScript;
         });
@@ -284,12 +302,12 @@ export class Name implements NameInterface {
         // Restore the set input script
         bsv.Transaction.prototype.setInputScript = savedSetInputScript
         bsv.Transaction.prototype.seal = savedSeal;
-        console.log('\n\nClaim TX: ', transferTx.toString());
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const txid = await Resolver.sendTx(transferTx);
         return {
             success: true,
-            txid
+            txid,
+            rawtx: transferTx.toString()
         };
     }
 

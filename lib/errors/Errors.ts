@@ -3,3 +3,9 @@ export class InvalidNameError extends Error {
         super(m);
     }
 }
+
+export class MaxClaimFeeExceededError extends Error {
+    constructor(m?: string) {
+        super(m);
+    }
+}
