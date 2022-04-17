@@ -68,7 +68,7 @@ describe('Create new root, extend and claim bat', () => {
 
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
-               await name.update([
+              /* await name.update([
                   { type: 'address', name: 'btc', value: 'myaddress1', op: 0 } // op is optional. 0 means set and 1 means delete
                ]);
 
@@ -82,7 +82,7 @@ describe('Create new root, extend and claim bat', () => {
                await name.update([
                   { type: 'address', name: 'ltc', op: 1 },
                ]);
-
+               */
                break;
             } catch (err) {
                if (!(err instanceof index.MissingNextTransactionError)) {
