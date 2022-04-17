@@ -81,7 +81,7 @@ describe('Resolver', () => {
    it('#getNameClaimFee should succeed', async () => {
       let result = await index.Resolver.getNameClaimFee('a');
       expect(result.success).to.eql(true);
-      expect(result.claimFee).to.eql(20000000);
+      expect(result.claimFee).to.eql(10000);
       expect(result.claimFeeAddress).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
 
       result = await index.Resolver.getNameClaimFee('ab');

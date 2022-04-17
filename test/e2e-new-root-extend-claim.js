@@ -53,7 +53,9 @@ describe('Create new root, extend and claim bat', () => {
 
                try {
                   // It should fail bcause the max claim fee is non zero (but insufficient)
-                  await name.claim(privateKeyStr, privateKeyStr, 1, name.callbackSignClaimInput, true); // By default
+                  await name.claim(privateKeyStr, privateKeyStr, {
+                     maxClaimFee: 1,
+                  }); // By default
                   expect(true).to.be.false;
                }
                catch (err) {
@@ -62,8 +64,13 @@ describe('Create new root, extend and claim bat', () => {
                   }
                   expect(err instanceof index.MaxClaimFeeExceededError).to.be.true;
                }
+
                // It should reject when the backend says it needs more.
-               const result = await name.claim(privateKeyStr, privateKeyStr, 0, name.callbackSignClaimInput, true); // By default
+               const result = await name.claim(privateKeyStr, privateKeyStr, {
+                  maxClaimFee: 0, 
+                  callback: name.callbackSignClaimInput, 
+                  isRemote: true
+               }); // By default
                console.log('Claim Result', result);
 
                // Expect the rawtx signed to be returned. Backend also broadcasts it

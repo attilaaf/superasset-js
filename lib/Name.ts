@@ -128,7 +128,25 @@ export class Name implements NameInterface {
         const sig = await signingService.signTx(prefixRawtxs, rawtx, script, satoshis, inputIndex, sighashType, isRemote);
         return sig;
     }
-    public async claim(key: string | bsv.PrivateKey, fundingKey: string | bsv.PrivateKey, maxClaimFee: number = 0, callback = this.callbackSignClaimInput, isRemote = true): Promise<any> {
+    public async claim(
+        key: string | bsv.PrivateKey,
+        fundingKey: string | bsv.PrivateKey,
+        opts: {
+            maxClaimFee?: number,
+            callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any,
+            isRemote?: boolean
+        }): Promise<any> {
+
+        let options = {
+            maxClaimFee: 0,
+            callback: this.callbackSignClaimInput,
+            isRemote: true
+        }
+        if (opts) {
+            options = Object.assign({}, options, opts);
+        }
+        console.log('running with options', options);
+
         this.ensureInit();
         if (this.isClaimed()) {
             throw new Error('Name already claimed')
@@ -144,7 +162,7 @@ export class Name implements NameInterface {
         const claimInfo = await Resolver.getNameClaimFee(this.nameString);        
         console.log('claimInfo', claimInfo);
 
-        if (maxClaimFee && claimInfo.claimFee > maxClaimFee) {
+        if (options.maxClaimFee && claimInfo.claimFee > options.maxClaimFee) {
             throw new MaxClaimFeeExceededError('Cannot claim because max')
         }
  
@@ -275,7 +293,7 @@ export class Name implements NameInterface {
             const changeOutput = num2bin(transferTx.outputs[3].satoshis, 8) + num2bin(changeScriptHex.length / 2, 1) + changeScriptHex;
             const extraOutputs = claimFeeOutput + changeOutput;
 
-            const sig = await callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, isRemote);
+            const sig = await options.callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, options.isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
             console.log('receiveAddressWithSize', receiveAddressWithSize);

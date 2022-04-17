@@ -17,11 +17,22 @@ export interface NameInterface {
     // The root of this name tree
     getRoot: () => string;
     // If it is not claimed, then claim it for the private key
-    claim: (
+   /* claim: (
         privateKey: string | bsv.PrivateKey,
         privateKeyFunding: string | bsv.PrivateKey,
         maxClaimFee: number,
         callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
+    ) => Promise<any>;
+*/
+    // If it is not claimed, then claim it for the private key
+    claim: (
+        key: string | bsv.PrivateKey,
+        fundingKey: string | bsv.PrivateKey,
+        opts: {
+            maxClaimFee?: number,
+            callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any,
+            isRemote?: boolean
+        }
     ) => Promise<any>;
     // Whether there was a spend of the claim tx
     isClaimed: () => boolean;
