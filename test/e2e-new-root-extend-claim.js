@@ -70,13 +70,29 @@ describe('Create new root, extend and claim bat', () => {
                   isRemote: true
                }); // By default
                console.log('Claim Result', result);
+              /* const nft = new NFT(name.getClaimTx());
+               console.log('nft', nft);
+
+               expect(nft.getClaimTx()).to.eql(name.getClaimTx())
+
+
+
+
+
+
+*/
+
+
+
+
+/*
                expect(name.getOwner()).to.eql('x');
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
                await name.update([
                   { type: 'address', name: 'btc', value: 'myaddress1', op: 0 } // op is optional. 0 means set and 1 means delete
                ]);
-               /*
+               
                await name.update([
                   { type: 'address', name: 'btc', value: 'myaddressupdated', op: 0 },
                   { type: 'address', name: 'bsv', value: 'bsvaddress', op: 0 },

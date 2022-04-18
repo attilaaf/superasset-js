@@ -12,7 +12,8 @@
     "ne2e": "mocha --exclude e2e  --timeout=60000 --reporter spec",
     "getname": "mocha --grep 'getName should fail' --timeout=60000 --reporter spec",
     "bnstx": "mocha --grep 'BnsTx' --timeout=300000 --reporter spec",
-    "getNameClaimFee": "mocha --grep 'getNameClaimFee' --timeout=300000 --reporter spec"
+    "getNameClaimFee": "mocha --grep 'getNameClaimFee' --timeout=300000 --reporter spec",
+    "nft": "mocha --grep 'NFT' --timeout=300000 --reporter spec"
   },
   "repository": {
     "type": "git",

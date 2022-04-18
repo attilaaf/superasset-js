@@ -9,3 +9,9 @@ export class MaxClaimFeeExceededError extends Error {
         super(m);
     }
 }
+
+export class InvalidNFTTxError extends Error {
+    constructor(m?: string) {
+        super(m);
+    }
+}

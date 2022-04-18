@@ -18,6 +18,8 @@ export interface NFTInterface {
     getRecords: () => Records;
     // Asset ID
     getAssetId: () => string;
+    // Mint Txid ID
+    getMintTxId: () => string;
     // Get the original rawtxs
     getRawtxs: () => string[]
     // Get the latest UTXO 

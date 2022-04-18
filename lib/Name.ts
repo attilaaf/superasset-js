@@ -20,8 +20,7 @@ import { SigningService } from "./SigningService";
 import { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
 import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 import { SuperAssetNFT } from "./contracts/SuperAssetNFT";
-import { API_PREFIX, feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
-import * as axios from 'axios';
+import { feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
 import { MaxClaimFeeExceededError } from "./errors/Errors";
 
 export class Name implements NameInterface {
@@ -82,7 +81,8 @@ export class Name implements NameInterface {
     }
 
     private async validateBuildRecords() {
-        console.log('await this.validateBuildRecords();');
+        return;
+       /* console.log('await this.validateBuildRecords();');
         const rawtxs = this.rawtxs.slice(this.rawtxIndexForClaim);
         const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')
@@ -116,7 +116,7 @@ export class Name implements NameInterface {
             prevTx = tx;
             this.isClaimNFTSpent = true; // There was at least one spend therefore it is claimed
             this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
-        }
+        }*/
     }
 
     /**
@@ -336,6 +336,16 @@ export class Name implements NameInterface {
             txid,
             rawtx: transferTx.toString()
         };
+    }
+
+    public getRawtxs(): string[] {
+        this.ensureInit();
+        return this.rawtxs;
+    }
+
+    public getClaimTx(): string {
+        this.ensureInit();
+        return this.rawtxs[this.rawtxIndexForClaim];
     }
 
     public isClaimed(): boolean {

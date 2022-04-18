@@ -7,6 +7,7 @@ import { InvalidBnsConstantError, InvalidCharError, InvalidCurrentDimensionError
 import { bsv } from "scryptlib";
 import { ExtensionOutputData } from "./interfaces/ExtensionOutputData.interface";
 import { letters } from "./Constants";
+import { MintInfo } from "./interfaces/NFT/MintInfo.interface";
 
 export class TreeProcessor implements TreeProcessorInterface {
 

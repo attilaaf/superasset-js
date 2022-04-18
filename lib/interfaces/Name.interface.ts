@@ -35,4 +35,8 @@ export interface NameInterface {
     getAddress: (coinSymbol: string) => Promise<string>;
     // Is Testnet
     isTestnet: () => boolean;
+    // Get the original rawtxs
+    getRawtxs: () => string[]
+    // Get the claim tx
+    getClaimTx: () => string
 }

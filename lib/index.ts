@@ -19,11 +19,12 @@ export { MissingNextTransactionError } from "./errors/MissingNextTransactionErro
 export { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
 export { NotInitError } from "./errors/NotInitError";
 export { NFTChainError } from "./errors/NFTChainError";
-export { InvalidNameError, MaxClaimFeeExceededError } from "./errors/Errors";
+export { InvalidNameError, MaxClaimFeeExceededError, InvalidNFTTxError } from "./errors/Errors";
 export { SuperAssetBNS } from "./contracts/SuperAssetBNS";
 export { SuperAssetNFT } from "./contracts/SuperAssetNFT";
 export { SuperAssetNFTMinFee } from "./contracts/SuperAssetNFTMinFee";
 export { SuperAssetFeeBurner } from "./contracts/SuperAssetFeeBurner";
+export { NFT } from "./NFT";
 
 export {
   InvalidBnsConstantError,
