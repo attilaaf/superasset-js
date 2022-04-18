@@ -23,10 +23,10 @@ describe('Create new root, extend and claim bat', () => {
       const issuerPkh = toHex(publicKeyHash);
       const claimPkh = toHex(publicKeyHash);;
       const rootOutput = index.Resolver.generateBnsRoot(issuerPkh, claimPkh);
-      console.log('About to deploy BNS Root...', rootOutput.toASM(), rootOutput.toHex());
+      console.log('About to deploy BNS Root...', rootOutput.toHex());
       const tx = await index.Resolver.deployRoot(privateKey, rootOutput, 10000);
       const testRoot = tx.hash;
-      console.log('Deployed tx: ', tx.toString());
+      console.log('Deployed BNS Root: ', tx.toString());
       await sleeper(5);
       const txChain = [tx.toString()];
       let counter = 0;
@@ -50,7 +50,6 @@ describe('Create new root, extend and claim bat', () => {
                const name = await resolver.getName('a');
                // Now that we have the name, claim it.
                expect(name.isClaimed()).to.be.false;
-
                try {
                   // It should fail bcause the max claim fee is non zero (but insufficient)
                   await name.claim(privateKeyStr, privateKeyStr, {
@@ -64,21 +63,20 @@ describe('Create new root, extend and claim bat', () => {
                   }
                   expect(err instanceof index.MaxClaimFeeExceededError).to.be.true;
                }
-
                // It should reject when the backend says it needs more.
                const result = await name.claim(privateKeyStr, privateKeyStr, {
-                  maxClaimFee: 0, 
-                  callback: name.callbackSignClaimInput, 
+                  maxClaimFee: 0,
+                  callback: name.callbackSignClaimInput,
                   isRemote: true
                }); // By default
                console.log('Claim Result', result);
-
+               expect(name.getOwner()).to.eql('x');
                // Expect the rawtx signed to be returned. Backend also broadcasts it
                // Add crypto currency addresses
-              /* await name.update([
+               await name.update([
                   { type: 'address', name: 'btc', value: 'myaddress1', op: 0 } // op is optional. 0 means set and 1 means delete
                ]);
-
+               /*
                await name.update([
                   { type: 'address', name: 'btc', value: 'myaddressupdated', op: 0 },
                   { type: 'address', name: 'bsv', value: 'bsvaddress', op: 0 },
@@ -105,7 +103,7 @@ describe('Create new root, extend and claim bat', () => {
                bnsTx.addChangeOutput(bitcoinAddress);
                bnsTx.signFundingInput(privateKey);
                const tx = bnsTx.getTx();
-               console.log(counter + ' Broadcasting...', tx.toString(), tx.hash)
+               console.log('Broadcasting...', counter, tx.toString(), tx.hash);
                txChain.push(tx.toString());
                await index.Resolver.sendTx(tx);
                console.log('Broadcasted tx...', tx.hash)
@@ -114,7 +112,6 @@ describe('Create new root, extend and claim bat', () => {
             console.log('sleeping 5 seconds ...')
             await sleeper(5);
          } while (true);
-
       } catch (ex) {
          console.log('-----Exception Caught-----', ex);
          expect(false).to.be.true;

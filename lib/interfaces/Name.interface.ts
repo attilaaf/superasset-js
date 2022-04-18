@@ -9,21 +9,13 @@ export interface NameInterface {
     // The current owner of the name UTXO
     getOwner: () => BitcoinAddress | null;
     // Set the new owner of the name UTXO (transfer)
-    setOwner: (address: BitcoinAddress) => Promise<OpResult>;
+    setOwner: (address: BitcoinAddress, fundingKey: string | bsv.PrivateKey) => Promise<OpResult>;
     // Get all records
     getNameInfo: () => NameInfo | null;
     // Update records
-    updateRecords: (records: Array<{ type: string, name: string, value: string, op?: number, ttl?: number }>) => Promise<OpResult>;
+    updateRecords: (records: Array<{ type: string, name: string, value: string, action?: 'set' | 'delete', ttl?: number }>) => Promise<OpResult>;
     // The root of this name tree
     getRoot: () => string;
-    // If it is not claimed, then claim it for the private key
-   /* claim: (
-        privateKey: string | bsv.PrivateKey,
-        privateKeyFunding: string | bsv.PrivateKey,
-        maxClaimFee: number,
-        callback?: (prefixRawtxs: string[], rawtx: string, script: string, satoshis: number, inputIndex: number, sighashType: number) => any
-    ) => Promise<any>;
-*/
     // If it is not claimed, then claim it for the private key
     claim: (
         key: string | bsv.PrivateKey,

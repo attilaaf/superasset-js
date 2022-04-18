@@ -25,12 +25,13 @@ import * as axios from 'axios';
 import { MaxClaimFeeExceededError } from "./errors/Errors";
 
 export class Name implements NameInterface {
-    private initialized = false;                // Whether it is initialized
-    private nameString = '';                    // Name string this name object represents
-    private nameInfo: NameInfo | null = null;   // Name record information 
-    private nftPtr: string | null = null;       // The NFT pointer
-    private claimTx: string | null = null;      // Claim tx for the name token
-    private rootTx: any | null = null;        // Root tx for BNS
+    private initialized = false;                        // Whether it is initialized
+    private nameString = '';                            // Name string this name object represents
+    private nameInfo: NameInfo | null = null;           // Name record information 
+    private nftPtr: string | null = null;               // The NFT pointer
+    private claimTx: string | null = null;              // Claim tx for the name token
+    private rootTx: any | null = null;                  // Root tx for BNS
+    private rawtxIndexForClaim: number = 0;             // The raw tx index for the claim tx in the rawtxs array
     public isClaimNFTSpent = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
@@ -71,14 +72,18 @@ export class Name implements NameInterface {
             throw new RootOutputHashMismatchError();
         }
         this.expectedRoot = calculatedRoot;
+        
         const treeProcessor: TreeProcessorInterface = new TreeProcessor();
         const result: PrefixParseResult = await treeProcessor.validatePrefixTree(rawtxs);
-        await this.validateBuildRecords(rawtxs.slice(result.rawtxIndexForClaim));
+        this.rawtxIndexForClaim = result.rawtxIndexForClaim;
+        await this.validateBuildRecords();
         this.nameString = result.nameString;
         this.initialized = true;
     }
 
-    private async validateBuildRecords(rawtxs: string[]) {
+    private async validateBuildRecords() {
+        console.log('await this.validateBuildRecords();');
+        const rawtxs = this.rawtxs.slice(this.rawtxIndexForClaim);
         const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')
         const assetId = assetTxId + '00000000';
@@ -97,6 +102,8 @@ export class Name implements NameInterface {
         for (let i = 1; i < rawtxs.length; i++) {
             const tx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
             const txId = (await tx.hash()).toString('hex');
+
+            console.log('tx', tx);
             const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
             // Enforce that each spend in the chain spends something from before
             if (!prefixMap[prevOutpoint]) {
@@ -217,7 +224,6 @@ export class Name implements NameInterface {
             this._updateChangeOutput()
             return this;
         }
-
         const savedSeal = bsv.Transaction.prototype.seal;
         bsv.Transaction.prototype.seal = async function () {
             const self = this;
@@ -322,6 +328,9 @@ export class Name implements NameInterface {
         bsv.Transaction.prototype.seal = savedSeal;
         // Broadcast a spend of the fee burner token, paying back the reimbursement to the address
         const txid = await Resolver.sendTx(transferTx);
+        // Add the rawtx to the list
+        this.rawtxs.push(transferTx.toString());
+        await this.validateBuildRecords();
         return {
             success: true,
             txid,
