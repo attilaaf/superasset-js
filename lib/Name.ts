@@ -22,6 +22,8 @@ import { getFeeBurner, getNameNFT } from "./contracts/ContractBuilder";
 import { SuperAssetNFT } from "./contracts/SuperAssetNFT";
 import { feeBurnerRefundAmount, feeBurnerSatoshis } from "./Constants";
 import { MaxClaimFeeExceededError } from "./errors/Errors";
+import { NFT } from "./NFT";
+import { NFTInterface } from "./interfaces/NFT/NFT.interface";
 
 export class Name implements NameInterface {
     private initialized = false;                        // Whether it is initialized
@@ -31,6 +33,7 @@ export class Name implements NameInterface {
     private claimTx: string | null = null;              // Claim tx for the name token
     private rootTx: any | null = null;                  // Root tx for BNS
     private rawtxIndexForClaim: number = 0;             // The raw tx index for the claim tx in the rawtxs array
+    //private nameNFT: NFTInterface | null = null;        // The name NFT if it exists
     public isClaimNFTSpent = false;
     public ownerAddress: BitcoinAddress | null = null;
     public rawtxs: string[] = [];
@@ -77,6 +80,8 @@ export class Name implements NameInterface {
         this.rawtxIndexForClaim = result.rawtxIndexForClaim;
         await this.validateBuildRecords();
         this.nameString = result.nameString;
+        console.log('rawtxIndexForClaim', this.rawtxIndexForClaim);
+       // this.nameNFT = await NFT.createNFT(this.rawtxs, this.isTestnet());
         this.initialized = true;
     }
 
@@ -330,11 +335,13 @@ export class Name implements NameInterface {
         const txid = await Resolver.sendTx(transferTx);
         // Add the rawtx to the list
         this.rawtxs.push(transferTx.toString());
-        await this.validateBuildRecords();
+         //await this.validateBuildRecords();
+        // this.nameNFT?.processTx(transferTx.toString());
         return {
             success: true,
             txid,
-            rawtx: transferTx.toString()
+            rawtx: transferTx.toString(),
+           // nameNFT: this.nameNFT
         };
     }
 

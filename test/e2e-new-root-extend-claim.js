@@ -70,6 +70,7 @@ describe('Create new root, extend and claim bat', () => {
                   isRemote: true
                }); // By default
                console.log('Claim Result', result);
+               
               /* const nft = new NFT(name.getClaimTx());
                console.log('nft', nft);
 

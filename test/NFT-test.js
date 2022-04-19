@@ -12,6 +12,7 @@ var { rootTx, rootTxExtend, rootTxExtendA } = require('./b-sample-tx');
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
 var { bsv, toHex, num2bin } = require('scryptlib');
+const { nftDeploy, nftTx1, nftMint, nftMelt } = require('./nft-sample.js');
 
 describe('NFT', () => {
    it('#createNFT should throw invalid empty', async () => {
@@ -44,10 +45,22 @@ describe('NFT', () => {
          expect(err instanceof index.InvalidNFTTxError).to.be.true;
       }
    });
-   it('#createNFT should succeed', async () => {
+   it('#createNFT should succeed deploy tx', async () => {
       // The root tx extend is an NFT
       const rawtxs = [
          rootTxExtendA
+      ];
+      const nft = await index.NFT.createNFT(rawtxs, true);
+      console.log('nft', nft);
+
+      expect(nft.getOwner().toString()).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
+      expect(nft.getAssetId().toString()).to.eql('b1f842b9dddd1c52fcb179cbe9ede1454d07e3738424e9539ea33dece45aa0a800000000');
+      expect(nft.getMintTxId().toString()).to.eql('a8a05ae4ec3da39e53e9248473e3074d45e1ede9cb79b1fc521cddddb942f8b1');
+   });
+   it('#createNFT should succeed full life cycle to melt', async () => {
+      // The root tx extend is an NFT
+      const rawtxs = [
+         nftDeploy, nftMint, nftTx1, nftMelt
       ];
       const nft = await index.NFT.createNFT(rawtxs, true);
       console.log('nft', nft);

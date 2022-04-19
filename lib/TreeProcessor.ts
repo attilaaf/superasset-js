@@ -38,13 +38,11 @@ export class TreeProcessor implements TreeProcessorInterface {
                 fulfilledName: '',
                 lastExtensionOutput: null,
                 expectedExtensionOutput,
-
             }
         }
-
         const rootTx = new bsv.Transaction(rawtxs[0]);
         let prefixMap = {};
-        prefixMap[`${rootTx.hash + '00000000'}`] = rootTx;
+        prefixMap[`${Buffer.from(rootTx.hash, 'hex').reverse().toString('hex') + '00000000'}`] = rootTx;
         let nameString = '';
         let currTx: bsv.Transaction | null = null;
         let lastExtensionOutput: ExtensionOutputData | null = null;

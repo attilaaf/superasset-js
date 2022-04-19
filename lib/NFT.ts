@@ -8,6 +8,9 @@ import { NFTTxInterface } from "./interfaces/NFT/NFTTx.interface";
 import { OpResult } from "./interfaces/OpResult.interface";
 import { Record, Records } from "./interfaces/Record.interface.ts";
 import * as bsv2 from 'bsv2';
+import { NFTChainError } from "./errors/NFTChainError";
+import { prevOutpointFromTxIn } from "./Helpers";
+import { bsv } from "scryptlib/dist";
 
 export class NFT implements NFTInterface {
     private initialized = false;
@@ -80,6 +83,10 @@ export class NFT implements NFTInterface {
         return this.rawtxs[0];
     }
 
+    public processTx(rawtx: string) {
+        const tx = new bsv.Transaction(rawtx);
+    }
+
     async init(rawtxs: string[]) {
         if (!rawtxs || !rawtxs.length) {
             throw new InvalidNameTransactionsError();
@@ -95,45 +102,37 @@ export class NFT implements NFTInterface {
         if (!rawtxs || !rawtxs.length) {
             throw new InvalidNFTTxError();
         }
-        const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
+        console.log('rawtxs', rawtxs);
+        const mintTx = new bsv.Transaction(rawtxs[0]);
 
-        if (mintTx.txOuts[0].script.chunks[0].buf.length !== 36 || mintTx.txOuts[0].script.chunks[1].buf.length !== 20) {
+        console.log('mintTx', mintTx);
+        if (mintTx.outputs[0].script.chunks[0].buf.length !== 36 || mintTx.outputs[0].script.chunks[1].buf.length !== 20) {
             throw new InvalidNFTTxError();
         }
 
-        const mintTxId = (await mintTx.hash()).reverse().toString('hex')
-        const assetId = (await mintTx.hash()).toString('hex') + '00000000';
-
-
-
+        const mintTxId = mintTx.hash;
+        console.log('mintTxId', mintTxId);
+        const assetId = Buffer.from(mintTx.hash, 'hex').reverse().toString('hex') + '00000000';
         
-        const ownerAddress = BitcoinAddress.fromHash160Buf(mintTx.txOuts[0].script.chunks[1].buf, isTestnet);
-
-
-        /*console.log('await this.validateBuildRecords();');
-        const rawtxs = this.rawtxs.slice(this.rawtxIndexForClaim);
-        const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
-        const assetTxId = (await mintTx.hash()).toString('hex')
-        const assetId = assetTxId + '00000000';
         let prefixMap = {};
         prefixMap[`${assetId}`] = mintTx;
-        this.claimTx = mintTx.toHex();
+        // this.claimTx = mintTx.toHex();
         let prevTx = mintTx;
         let address;
-        if (this.opts?.testnet) {
+        if (isTestnet) {
             address = new bsv2.Address.Testnet();
             address.versionByteNum = bsv2.Constants.Testnet.Address.pubKeyHash;
         } else {
             address = new bsv2.Address();
         }
-        this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
-        for (let i = 1; i < rawtxs.length; i++) {
-            const tx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
-            const txId = (await tx.hash()).toString('hex');
 
-            console.log('tx', tx);
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.txIns[0]);
+        let ownerAddress = BitcoinAddress.fromHash160Buf(prevTx.outputs[0].script.chunks[1].buf, isTestnet);
+        for (let i = 1; i < rawtxs.length; i++) {
+            const tx = new bsv.Transaction(rawtxs[i]); // bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
+            const txId = tx.hash;
+            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
             // Enforce that each spend in the chain spends something from before
+            console.log('prefixMap', prefixMap, prevOutpoint);
             if (!prefixMap[prevOutpoint]) {
                 throw new NFTChainError();
             }
@@ -142,11 +141,12 @@ export class NFT implements NFTInterface {
             prefixMap = {};
             prefixMap[txId + '00000000'] = true;
             prevTx = tx;
-            this.isClaimNFTSpent = true; // There was at least one spend therefore it is claimed
-            this.ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
-        } */
+            ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.txOuts[0].script.chunks[1].buf));
+        }
+
         return new NFT(rawtxs, ownerAddress, assetId, mintTxId);
     }
+
     private ensureInit() {
         if (!this.initialized) {
             throw new NotInitError();

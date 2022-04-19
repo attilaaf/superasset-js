@@ -13,7 +13,7 @@ export const prevOutpointFromTxIn = (txIn) => {
     return {
         outputIndex,
         prevTxId,
-        prevOutpoint: prevTxId + intToLE(outputIndex)
+        prevOutpoint: Buffer.from(prevTxId, 'hex').reverse().toString('hex') + intToLE(outputIndex)
     };
 }
 export const intToLE = (i) => {
@@ -115,7 +115,7 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
     const rootTx = new bsv.Transaction(rawtxs[0]);
     const calculatedRoot = rootTx.hash;
     let prefixMap = {};
-    prefixMap[`${calculatedRoot + '00000000'}`] = rootTx;
+    prefixMap[`${Buffer.from(calculatedRoot, 'hex').reverse().toString('hex') + '00000000'}`] = rootTx;
     let nameString = '';
     let prevPotentialClaimNft = '';
     let prevTx = rootTx;
@@ -127,6 +127,7 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
     }
     for (let i = 1; i < rawtxs.length; i++) {
         const tx = new bsv.Transaction(rawtxs[i]);
+        console.log('prefixMap start', prefixMap, tx);
         const txid = tx.hash;
         const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
         // Enforce that each spend in the chain spends something from before
@@ -141,6 +142,7 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
                     isClaimed: true,
                 }
             } else {
+                console.log('prevOutpoint', tx, prevOutpoint, outputIndex, prevPotentialClaimNft);
                 throw new PrefixChainMismatchError();
             }
         } else {
@@ -153,7 +155,8 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
         }
         // Clear off the map to ensure a rawtx must spend something directly of it's parent
         prefixMap = {};
-        prevPotentialClaimNft = txid + '00000000'; // Potential NFT is always at position 1
+        prevPotentialClaimNft = Buffer.from(txid, 'hex').reverse().toString('hex') + '00000000'; // Potential NFT is always at position 1
+        console.log('prevPotentialClaimNft', prevPotentialClaimNft);
         for (let o = 1; o < 38; o++) {
             const buf = Buffer.allocUnsafe(4);
             buf.writeInt32LE(o);

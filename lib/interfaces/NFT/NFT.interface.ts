@@ -20,6 +20,8 @@ export interface NFTInterface {
     getAssetId: () => string;
     // Mint Txid ID
     getMintTxId: () => string;
+    // Process a tx as in an update
+    processTx: (rawtx: string) => void;
     // Get the original rawtxs
     getRawtxs: () => string[]
     // Get the latest UTXO 
