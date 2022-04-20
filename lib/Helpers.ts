@@ -1,9 +1,7 @@
 import * as bsv from 'bsv';
 import { num2bin, toHex } from 'scryptlib/dist';
-import { ExtensionOutputData } from './interfaces/ExtensionOutputData.interface';
 import { getPreimage } from 'scryptlib';
-import { PrefixChainMismatchError } from './errors/PrefixChainMismatchError';
-
+ 
 export const sighashType2Hex = s => s.toString(16)
 
 const MSB_THRESHOLD = 0x7e;
@@ -60,123 +58,9 @@ export const createOutputFromSatoshisAndHex = (satoshis: number, scriptHex: stri
     return num2bin(satoshis, 8) + outputLen + scriptHex;
 }
 
-export const parseExtensionOutputData = async (tx: bsv.Transaction, outputIndex: number): Promise<ExtensionOutputData | null> => {
-    const script = tx.outputs[outputIndex].script;
-    const satoshis = tx.outputs[outputIndex].satoshis;
-    const txId = tx.hash;
-    const outputData: ExtensionOutputData = {
-        bnsConstant: script.chunks[0].buf.toString('hex'),
-        issuerPkh: script.chunks[1].buf.toString('hex'),
-        claimHash: script.chunks[2].buf.toString('hex'),
-        dupHash: script.chunks[3].buf.toString('hex'),
-        currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
-        char: script.chunks[5].buf.toString('utf8'),
-        charHex: script.chunks[5].buf.toString('hex'),
-        outpointHex: Buffer.from(txId, 'hex').reverse().toString('hex') + intToLE(outputIndex),
-        txId: txId,
-        txIdBuf: Buffer.from(txId, 'hex').reverse(),
-        script,
-        outputIndex,
-        satoshis,
-        tx
-    };
-    return outputData;
-};
-
-export const parseExtensionOutputData2 = async (out: any, txId: string, outputIndex: number, tx: bsv.Transaction): Promise<ExtensionOutputData | null> => {
-    const script = out.script;
-    const satoshis = out.satoshis;
-    const outputData: ExtensionOutputData = {
-        bnsConstant: script.chunks[0].buf.toString('hex'),
-        issuerPkh: script.chunks[1].buf.toString('hex'),
-        claimHash: script.chunks[2].buf.toString('hex'),
-        dupHash: script.chunks[3].buf.toString('hex'),
-        currentDimension: parseInt(script.chunks[4].buf.toString('hex'), 16),
-        char: script.chunks[5].buf.toString('utf8'),
-        charHex: script.chunks[5].buf.toString('hex'),
-        outpointHex: Buffer.from(txId, 'hex').reverse().toString('hex') + intToLE(outputIndex),
-        txId: txId,
-        txIdBuf: Buffer.from(txId, 'hex').reverse(),
-        script,
-        outputIndex,
-        satoshis,
-        tx
-    };
-    return outputData;
-};
-
 export interface PrefixParseResult {    
     rawtxIndexForClaim: number;
     nameString: string;
     isClaimed: boolean;
 }
-
-export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseResult> {
-    const rootTx = new bsv.Transaction(rawtxs[0]);
-    const calculatedRoot = rootTx.hash;
-    let prefixMap = {};
-    prefixMap[`${Buffer.from(calculatedRoot, 'hex').reverse().toString('hex') + '00000000'}`] = rootTx;
-    let nameString = '';
-    let prevPotentialClaimNft = '';
-    let prevTx = rootTx;
-
-    // todo: We MUST validate that the root (first tx) is the actual root
-    const rootExtOutputData: ExtensionOutputData | null = await parseExtensionOutputData(rootTx, 0);
-    if (!rootExtOutputData || rootExtOutputData.charHex !== 'ff') {
-        throw new Error('Expected first transaction to be root BNS tree');
-    }
-    for (let i = 1; i < rawtxs.length; i++) {
-        const tx = new bsv.Transaction(rawtxs[i]);
-       // console.log('prefixMap start', prefixMap, tx);
-        const txid = tx.hash;
-        const reverseTxid = Buffer.from(txid, 'hex').reverse().toString('hex');
-        const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
-        // Enforce that each spend in the chain spends something from before
-        if (!prefixMap[prevOutpoint]) {
-            // Perhaps this is the claimNFT being spent?
-            if (prevPotentialClaimNft === prevOutpoint) {
-                // Found a spend of a claim, return the position of the previous index then
-                // Return because we have successfully resolved the prefix tree to the location of the claim NFT that was spent.
-                return {
-                    rawtxIndexForClaim: i - 1,
-                    nameString,
-                    isClaimed: true,
-                }
-            } else {
-                console.log('PrefixChainMismatchError', prevPotentialClaimNft, prevOutpoint)
-                throw new PrefixChainMismatchError();
-            }
-        } else {
-            // Do not concat the root node, skip it
-            if (i > 1) {
-                console.log('i', i);
-                const prevTxOut = prevTx.outputs[outputIndex];
-                const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
-                nameString += letter; // Add the current letter that was spent
-            }
-        }
-        // Clear off the map to ensure a rawtx must spend something directly of it's parent
-        prefixMap = {};
-        prevPotentialClaimNft = reverseTxid + '00000000'; // Potential NFT is always at position 1
-        for (let o = 1; o < 38; o++) {
-            const buf = Buffer.allocUnsafe(4);
-            buf.writeInt32LE(o);
-            const outNumString = buf.toString('hex');
-            prefixMap[reverseTxid + outNumString] = tx.outputs[o];
-        }
-        prevTx = tx;
-    }
-
-    if (rawtxs.length === 1) {
-        return {
-            rawtxIndexForClaim: -1,
-            nameString,
-            isClaimed: false,
-        }
-    }
-    return {
-        rawtxIndexForClaim: rawtxs.length - 1,
-        nameString,
-        isClaimed: false,
-    }
-}
+ 
