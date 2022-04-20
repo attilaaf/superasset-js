@@ -29,7 +29,7 @@ describe('superasset.factory', () => {
          editions: 100,
          sats: 300
       });
-      expect(draftCollection.satoshisNeeded()).to.eql(1000);
+      expect(draftCollection.satoshisNeeded()).to.eql(42630);
    });
    it('#prepareCollection insufficient fee', async () => {
       const issuerAddress = privateKey.toAddress().toHex().substring(2);
@@ -43,7 +43,6 @@ describe('superasset.factory', () => {
          sats: 300
       });
       const utxo = {};
-      expect(factory.prepareCollection(draftCollection, utxo)).to.be.rejected;
-      //const collection = await factory.prepareCollection(draftCollection, utxo);
+      expect(factory.prepareCollection(draftCollection, utxo));
    });
 });
