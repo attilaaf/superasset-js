@@ -5,7 +5,6 @@ var chaiAsPromised = require('chai-as-promised');
 
 chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
-var Name = require('../dist/Name.js');
 var bsv = require('bsv');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
 // REPLACE with your own private keys

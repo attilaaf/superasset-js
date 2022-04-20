@@ -1,32 +1,18 @@
-import { Name } from "./Name";
-import { NameInterface } from "./interfaces/Name.interface";
-import { ResolverInterface } from "./interfaces/Resolver.interface";
-import { ResolverConfigInterface } from "./interfaces/ResolverConfig.interface";
-import { GetNameTransactionsError } from "./errors/GetNameTransactionsError";
-import { GetNameTransactionsResult, GetNameTransactionsResultEnum } from "./interfaces/GetNameTransactionsResult.interface";
-import { InvalidNameTransactionsError, MissingNextTransactionError, ParameterMissingError } from ".";
-import { TreeProcessorInterface } from "./interfaces/TreeProcessor.interface";
-import { TreeProcessor } from "./TreeProcessor";
-import { RequiredTransactionPartialResult } from "./interfaces/RequiredTransactionPartialResult.interface";
+
 import { bsv } from 'scryptlib';
 import * as axios from 'axios';
-import { SuperAssetBNS } from "./contracts/SuperAssetBNS";
-import { getClaimNFTOutput } from "./contracts/ContractBuilder";
-import { API_PREFIX, bnsConstant, BNS_API_URL, BNS_ROOT } from "./Constants";
-import { InvalidNameError } from "./errors/Errors";
-const { buildContractClass, Ripemd160, bsv, Bytes } = require('scryptlib');
-const sighashType2Hex = s => s.toString(16)
-const Signature = bsv.crypto.Signature;
-const sighashTypeBns = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
-
+import { API_PREFIX } from "./Constants";
+import { ResolverInterface } from './interfaces/Resolver.interface';
+import { ResolverConfigInterface } from './interfaces/ResolverConfig.interface';
+import { NFTInterface } from './interfaces/NFT.interface';
+import { NFT } from './NFT';
+ 
 export class Resolver implements ResolverInterface {
-    private nameTransactions = {};
+
     private resolverConfig: any = {
         testnet: false,
-        root: BNS_ROOT,
-        url: BNS_API_URL,
         debug: false,
-        bnsOutputRipemd160: 'b3b582b4ae134d329c99ef665b7e31b226892a17'
+        fetchTransactions: this.fetchTransactionsCallback
     }
 
     private constructor(resolverConfig?: ResolverConfigInterface) {
@@ -39,85 +25,18 @@ export class Resolver implements ResolverInterface {
         return new Resolver(resolverConfig);
     }
 
-    public async getName(name: string): Promise<NameInterface> {
-        if (!name || !name.length) {
-            throw new ParameterMissingError();
-        }
-        const txFetch = await this.getNameTransactions(name);
-        if (txFetch.result === GetNameTransactionsResultEnum.FETCH_ERROR) {
-            throw new GetNameTransactionsError();
-        }
-        this.nameTransactions[name] = txFetch.rawtxs;
-        const nameObject = new Name({
-            testnet: this.resolverConfig.testnet,
-        }, this.resolverConfig.bnsOutputRipemd160);
-        await nameObject.init(this.nameTransactions[name], this.resolverConfig.root);
+    public async getNFT(assetId: string): Promise<NFTInterface> {
+        const txs = await this.resolverConfig.fetchTransactions(assetId, this.resolverConfig)
+        return NFT.fromTransactions(txs.map((item) => item.rawtx), this.resolverConfig.testnet);
+    }
 
-        // Ensure that the instantiated name at least partially includes what was requested by the resolver
-        if (!name.includes(nameObject.getNameString())) {
-            throw new InvalidNameTransactionsError();
-        }
-        // If it partially includes the transaction but it is not equal to the name...
-        // It means there are transactions missing (ex: need to potentially be created for that next letter(s) missing)
-        if (nameObject.getNameString() != name) {
-            // Identify the point at which we need the next letter transaction
-            const treeProcessor: TreeProcessorInterface = new TreeProcessor();
-            const partialResult: RequiredTransactionPartialResult = await treeProcessor.getRequiredTransactionPartial(name, txFetch.rawtxs);
-            // We have the point at which the next letter transaction is required
-            throw new MissingNextTransactionError(partialResult);
-        }
-        return nameObject;
+    public async fetchTransactionsCallback(): Promise<Array<{rawtx: string}>[]>{
+        
+        return [];
     }
 
     public getResolverConfig(): ResolverConfigInterface {
         return this.resolverConfig;
-    }
-
-    static generateBnsRoot(issuerPkh: string, claimPkh: string) {
-
-        let prevDupHash = '0000000000000000000000000000000000000000';
-        let currentDimension = 20;
-        const BNS = buildContractClass(SuperAssetBNS(true));
-        const tree = new BNS(
-            new Bytes(bnsConstant),
-            new Ripemd160(issuerPkh),
-            new Ripemd160(getClaimNFTOutput(claimPkh).hash),
-            new Ripemd160(prevDupHash),
-            currentDimension,
-            new Bytes('ff')
-        );
-        const asmVars = {
-            'Tx.checkPreimageOpt_.sigHashType': sighashType2Hex(sighashTypeBns)
-        };
-        tree.replaceAsmVars(asmVars);
-        return tree.lockingScript;
-    }
-
-    private async getNameTransactions(name: string): Promise<GetNameTransactionsResult> {
-        if (this.resolverConfig.processGetNameTransactions) {
-            return this.resolverConfig.processGetNameTransactions(name, this.resolverConfig);
-        }
-        // Provide a default implementation
-        return {
-            result: GetNameTransactionsResultEnum.NOT_IMPLEMENTED,
-            rawtxs: []
-        }
-    }
-
-    static async deployRoot(privateKey, contract, satoshis) {
-        const address = privateKey.toAddress()
-        const tx = new bsv.Transaction()
-
-        tx.from(await Resolver.fetchUtxos(address))
-            .addOutput(new bsv.Transaction.Output({
-                script: contract,
-                satoshis
-            }))
-            .change(address)
-            .sign(privateKey)
-
-        await Resolver.sendTx(tx)
-        return tx
     }
 
     static async fetchUtxos(address) {
@@ -196,22 +115,10 @@ export class Resolver implements ResolverInterface {
 
     static async isTxExist(txid: string) {
         try {
-            const { data } = await axios.default.get(`${API_PREFIX}/tx/hash/${txid}`);
+            await axios.default.get(`${API_PREFIX}/tx/hash/${txid}`);
             return true;
         } catch (error: any) {
             return false;
-        }
-    }
-
-    static async getNameClaimFee(name: string): Promise<{ success: boolean, claimFee: number, claimFeeAddress: string }>  {
-        if (!name || name.length === 0) {
-            throw new InvalidNameError();
-        }
-        let res: any = await axios.default.get(`${BNS_API_URL}/claimFee/${name}`)
-        return {
-            success: res.data.success,
-            claimFee: res.data.claimFee,
-            claimFeeAddress: res.data.claimFeeAddress
         }
     }
 }

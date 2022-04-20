@@ -1,7 +1,8 @@
 import { NFT } from "./NFT";
-export { InvalidNameError, MaxClaimFeeExceededError, InvalidNFTTxError } from "./Errors";
+export { InvalidArgumentError, InvalidP2NFTPKHError } from "./Errors";
 export { NFT } from "./NFT";
 export { BitcoinAddress } from "./BitcoinAddress";
+ 
 
 export class SuperAssetClient {
 }
