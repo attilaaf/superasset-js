@@ -6,6 +6,8 @@ import { ResolverInterface } from './interfaces/Resolver.interface';
 import { ResolverConfigInterface } from './interfaces/ResolverConfig.interface';
 import { NFTInterface } from './interfaces/NFT.interface';
 import { NFT } from './NFT';
+import { InvalidArgumentError } from './Errors';
+import { intToLE } from './Helpers';
  
 export class Resolver implements ResolverInterface {
 
@@ -26,8 +28,15 @@ export class Resolver implements ResolverInterface {
     }
 
     public async getNFT(assetId: string): Promise<NFTInterface> {
+        if (assetId.length < 72) {
+            throw new InvalidArgumentError();
+        }
         const txs = await this.resolverConfig.fetchTransactions(assetId, this.resolverConfig)
-        return NFT.fromTransactions(txs.map((item) => item.rawtx), this.resolverConfig.testnet);
+        console.log('Buffer.from(assetId.substring(64)', Buffer.from(assetId.substring(64)));
+        const expectedOutputIndex = parseInt(Buffer.from(assetId.substring(64), 'hex').reverse().toString('hex'))
+    
+        console.log('expectedOutputIndex', expectedOutputIndex);
+        return NFT.fromTransactions(txs.map((item) => item.rawtx), expectedOutputIndex, this.resolverConfig.testnet);
     }
 
     public async fetchTransactionsCallback(): Promise<Array<{rawtx: string}>[]>{

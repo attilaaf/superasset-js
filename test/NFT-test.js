@@ -2,7 +2,6 @@
 var chai = require('chai');
 var expect = require('chai').expect;
 var chaiAsPromised = require('chai-as-promised');
-
 chai.use(chaiAsPromised);
 var index = require('../dist/index.js');
 // DO NOT USE FOR REAL BITCOIN TRANSACTIONS. THE FUNDS WILL BE STOLEN.
@@ -65,7 +64,7 @@ describe('NFT', () => {
       const rawtxs = [
          nftDeploy, nftMint, nftTx1
       ];
-      const nft = await index.NFT.fromTransactions(rawtxs, true);
+      const nft = await index.NFT.fromTransactions(rawtxs, 0, true);
       expect(nft.getOwner().toString()).to.eql('mwM1V4zKu99wc8hnNaN4VjwPci9TzDpyCh');
       expect(nft.getAssetId().toString()).to.eql('f0f4dfde3f763e59ff1843bce5b381bdfece3487601746bb654d0692bf7a0b9a00000000');
       expect(nft.getMintTxId().toString()).to.eql('9a0b7abf92064d65bb4617608734cefebd81b3e5bc4318ff593e763fdedff4f0');
