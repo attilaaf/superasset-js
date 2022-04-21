@@ -9,9 +9,13 @@ export interface NFTInterface {
     // The current owner of the name UTXO
     getOwner: () => BitcoinAddress | null;
     // Set the new owner of the name UTXO (transfer)
-    setOwner: (address: BitcoinAddress, fundingKey: string | bsv.PrivateKey) => Promise<OpResult>;
+    setOwner: (address: string, fundingKey: string | bsv.PrivateKey) => Promise<OpResult>;
     // Get all mint info
     getMintInfo: () => MintInfo | null;
+    // Get Deploy op return datas
+    getDeployDatas: (encoding: 'hex' | 'utf8') => string[];
+    // Mint to the first owner
+    mint: (firstOwner: string, dataOuts?: string[]) => Promise<OpResult | null>;
     // Update records
     update: (records: Array<{ type: string, name: string, value: string, action?: 'set' | 'delete' }>) => Promise<OpResult>;
     // Get the records

@@ -14,15 +14,20 @@ import { getNFT } from "./contracts/ContractBuilder";
 export class NFT implements NFTInterface {
     private initialized = false;
     private mintInfo: MintInfo | null = null;
-
-    private constructor(private rawtxs: string[], private ownerAddress: BitcoinAddress, private assetId: string, private mintTxId: string) {
+    private mintTxId: string;
+    private assetId: string;
+    private isMinted: boolean = false;
+    private constructor(private rawtxs: string[], private ownerAddress: BitcoinAddress, private initialOutputIndex: number, private deployDatas: string[]) {
         if (!rawtxs || !rawtxs.length) {
             throw new Error('Invalid rawtxs');
         }
-        // this.mintInfo = NFT.parseMintInfo(rawtxs[0]);
-        //  this.asseId = mintInfo.asseId;
-        // const parsedTx: NFTTxInterface = NFT.parseTx(rawtxs[rawtxs.length - 1]);
-        // this.ownerAddress = parsedTx.ownerAddress;
+        const parsedTx = new bsv.Transaction(rawtxs[0]);
+        this.mintTxId = parsedTx.hash;
+        this.assetId = Buffer.from(this.mintTxId, 'hex').reverse().toString('hex') + intToLE(this.initialOutputIndex);
+        // If at least 1 rawtx was spent, then we know it was minted.
+        if (rawtxs.length >= 2) {
+            this.isMinted = true;
+        }
         this.initialized = true;
     }
 
@@ -31,7 +36,7 @@ export class NFT implements NFTInterface {
         return this.ownerAddress;
     }
 
-    public async setOwner(address: BitcoinAddress): Promise<OpResult> {
+    public async setOwner(address: string): Promise<OpResult> {
         this.ensureInit();
         return {
             success: false
@@ -41,6 +46,18 @@ export class NFT implements NFTInterface {
     public getMintInfo(): MintInfo | null {
         this.ensureInit();
         return this.mintInfo;
+    }
+
+    public getDeployDatas(encoding: 'hex' | 'utf8' | any = 'hex'): string[] {
+        this.ensureInit();
+        const hexDecoded: any[] = [];
+        if (!encoding) {
+            encoding = 'hex'
+        }
+        for (const data of this.deployDatas) {
+            hexDecoded.push(Buffer.from(data, 'hex').toString(encoding));
+        }
+        return hexDecoded;
     }
 
     public async update(records: Array<{ type: string, name: string, value: string }>): Promise<OpResult> {
@@ -85,7 +102,14 @@ export class NFT implements NFTInterface {
         this.initialized = true;
     }
 
-    static async deploy(opts: NFTDeployOptsInterface, mintAddress: any, data: string): Promise<NFTInterface[]> {
+    public async mint(firstOwner: string, dataOuts?: string[]): Promise<OpResult | null> {
+        if (typeof firstOwner !== 'string') {
+            throw new InvalidArgumentError();
+        }
+        return null;
+    }
+
+    static async deploy(opts: NFTDeployOptsInterface, mintAddress: any, dataOuts: string[]): Promise<{ txid: string, nfts: NFTInterface[] }> {
         if (typeof mintAddress !== 'string') {
             throw new InvalidArgumentError();
         }
@@ -108,8 +132,14 @@ export class NFT implements NFTInterface {
                 satoshis: options.satoshis
             }))
         }
+        for (let i = 0; i < dataOuts.length; i++) {
+            tx.addOutput(new bsv.Transaction.Output({
+                script: bsv.Script.fromASM('OP_FALSE OP_RETURN ' + Buffer.from(dataOuts[i], 'utf8').toString('hex')),
+                satoshis: 0
+            }))
+        }
         tx.change(addressString).sign(options.fundingPrivateKey)
-        const sendResult = await options.sendTx(tx);
+        const txid = await options.sendTx(tx);
 
         const nfts: NFTInterface[] = [];
         for (let i = 0; i < options.editions; i++) {
@@ -117,8 +147,24 @@ export class NFT implements NFTInterface {
             nfts.push(nft);
         }
 
-        console.log('sendResult', sendResult, nfts);
-        return nfts;
+        console.log('sendResult', txid, nfts);
+        return {
+            txid,
+            nfts
+        };
+    }
+
+    static getOpReturnOutputDatas(tx: bsv.Transaction): string[] {
+        const deployDatas: string[] = [];
+        for (let i = 0; i < tx.outputs.length; i++) {
+            if (tx.outputs[i].script.chunks[0] && tx.outputs[i].script.chunks[0].opcodenum === 0 &&
+                tx.outputs[i].script.chunks[1] && tx.outputs[i].script.chunks[1].opcodenum === 106 &&
+                tx.outputs[i].script.chunks[2] && tx.outputs[i].script.chunks[2].buf) {
+                const potentialOpReturn = tx.outputs[i].script.chunks[2].buf.toString('hex');
+                deployDatas.push(potentialOpReturn);
+            }
+        }
+        return deployDatas
     }
 
     static async fromTransactions(rawtxs: string[], initialOutputIndex = 0, isTestnet = false): Promise<NFT> {
@@ -126,7 +172,7 @@ export class NFT implements NFTInterface {
             throw new InvalidArgumentError();
         }
         const mintTx = new bsv.Transaction(rawtxs[0]);
-
+        const deployDatas: string[] = NFT.getOpReturnOutputDatas(mintTx);
         if (!NFT.isP2NFTPKH(mintTx, initialOutputIndex)) {
             throw new InvalidP2NFTPKHError();
         }
@@ -174,8 +220,7 @@ export class NFT implements NFTInterface {
             prevTx = tx;
             ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.outputs[outputIndex].script.chunks[1].buf));
         }
-
-        return new NFT(rawtxs, ownerAddress, assetId, mintTxId);
+        return new NFT(rawtxs, ownerAddress, initialOutputIndex, deployDatas);
     }
 
     static isP2NFTPKH(tx: bsv.Transaction, outputIndex = 0): boolean {
