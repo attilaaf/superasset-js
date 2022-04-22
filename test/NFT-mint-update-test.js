@@ -24,10 +24,8 @@ describe('NFT Mint Update e2e', () => {
       const opts = {
          isTestnet: true,
          fundingPrivateKey: privateKey,   // Funding key used to mint the NFT
-         satoshis: 300,                   // Satoshis to place into the NFT output
-         editions: 2                      // Number of editions to create
       };
-      const { txid, nfts} = await index.NFT.deploy(opts, mintAddress, datas);
+      const { txid, nfts} = await index.NFT.deploy(opts, mintAddress, 1, 2, datas);
       const reverseTxid = Buffer.from(txid, 'hex').reverse().toString('hex');
       for (let i = 0; i < nfts.length; i++) {
          expect(nfts[i].getAssetId()).to.eql(reverseTxid + intToLE(i));
@@ -37,7 +35,8 @@ describe('NFT Mint Update e2e', () => {
       }
       const nft = nfts[0];
       const firstOwner = mintAddress;
-      const mintResult = await nft.mint(firstOwner);
+      console.log('nfts', nfts)
+      const mintResult = await nft.mint(opts, firstOwner, 1, []);
 
       console.log('nfts', mintResult, nfts)
    });

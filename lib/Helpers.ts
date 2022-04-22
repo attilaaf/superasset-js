@@ -4,6 +4,9 @@ import { getPreimage } from 'scryptlib';
  
 export const sighashType2Hex = s => s.toString(16)
 
+const Signature = bsv.crypto.Signature;
+export const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+export const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
 const MSB_THRESHOLD = 0x7e;
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.prevTxId.toString('hex');

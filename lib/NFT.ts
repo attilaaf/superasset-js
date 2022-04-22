@@ -2,14 +2,15 @@ import { BitcoinAddress } from "./BitcoinAddress";
 import { OpResult } from "./interfaces/OpResult.interface";
 import { Record, Records } from "./interfaces/Record.interface";
 import * as bsv2 from 'bsv2';
-import { intToLE, prevOutpointFromTxIn } from "./Helpers";
-import { bsv } from "scryptlib/dist";
+import { generatePreimage, intToLE, prevOutpointFromTxIn, sighashTypeAll, sighashTypeSingle } from "./Helpers";
+import { Bool, bsv, Bytes, num2bin, PubKey, signTx, toHex } from "scryptlib/dist";
 import { NFTInterface } from "./interfaces/NFT.interface";
 import { MintInfo } from "./interfaces/MintInfo.interface";
 import { InvalidArgumentError, InvalidChainError, InvalidP2NFTPKHError, NotInitError } from "./Errors";
 import { NFTDeployOptsInterface } from "./interfaces/NFTDeployOpts.interface";
 import { Resolver } from "./Resolver";
 import { getNFT } from "./contracts/ContractBuilder";
+import { NFTMintOptsInterface } from "./interfaces/NFTMintOpts.interface";
 
 export class NFT implements NFTInterface {
     private initialized = false;
@@ -102,20 +103,76 @@ export class NFT implements NFTInterface {
         this.initialized = true;
     }
 
-    public async mint(firstOwner: string, dataOuts?: string[]): Promise<OpResult | null> {
+    public async mint(opts: NFTMintOptsInterface, firstOwner: string, satoshis: number = 300, dataOuts: string[] = []): Promise<{ txid: string, rawtx: string }> {
         if (typeof firstOwner !== 'string') {
             throw new InvalidArgumentError();
         }
-        return null;
+        const options = Object.assign({}, {
+            isTestnet: false,
+            sendTx: Resolver.sendTx,
+            fetchUtxos: Resolver.fetchUtxos
+        }, opts);
+        const addressString = options.fundingPrivateKey.toAddress().toString();
+        const fundingAddress = BitcoinAddress.fromString(addressString);
+        const firstOwnerAddress = BitcoinAddress.fromString(firstOwner);
+        const utxos = await options.fetchUtxos(fundingAddress.toString())
+        const tx = new bsv.Transaction();
+        const nftClass = getNFT(firstOwnerAddress.toHash160Bytes());
+        tx.from(utxos);
+        tx.addOutput(new bsv.Transaction.Output({
+            script: nftClass.lockingScript,
+            satoshis,
+        }))
+
+        if (dataOuts) {
+            for (let i = 0; i < dataOuts.length; i++) {
+                tx.addOutput(new bsv.Transaction.Output({
+                    script: bsv.Script.fromASM('OP_FALSE OP_RETURN ' + Buffer.from(dataOuts[i], 'utf8').toString('hex')),
+                    satoshis: 0
+                }))
+            }
+        }
+        tx.change(addressString).sign(options.fundingPrivateKey)
+        tx.setInputScript(0, async (tx, output) => {
+            const receiveAddressWithSize = new Bytes('14' + firstOwnerAddress.toHash160Bytes());
+            const outputSizeWithLength = (nftClass.lockingScript.toHex().length / 2).toString(16);
+            const outputSatsWithSize = new Bytes(num2bin(satoshis, 8) + `${outputSizeWithLength}24`);
+            const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
+            const sig = signTx(tx, options.fundingPrivateKey, output.script, output.satoshis, output.outputIndex, sighashTypeSingle);
+            // const sig = await options.callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, options.isRemote);
+            console.log('preimage', preimage);
+            console.log('outputSatsWithSize', outputSatsWithSize);
+            console.log('receiveAddressWithSize', receiveAddressWithSize);
+            console.log('sig', sig);
+            console.log('options.fundingPrivateKey.PublicKey', options.fundingPrivateKey.publicKey);
+            const unlockScript = tx.unlock(
+                preimage,
+                outputSatsWithSize,
+                receiveAddressWithSize,
+                new Bool(false),
+                sig,
+                new PubKey(toHex(options.fundingPrivateKey.publicKey))
+            ).toScript();
+            return unlockScript;
+        });
+        const txid = await options.sendTx(tx);
+        const nfts: NFTInterface[] = [];
+        /* for (let i = 0; i < options.editions; i++) {
+             const nft = await NFT.fromTransactions([tx.toString()], i, options.isTestnet)
+             nfts.push(nft);
+         }*/
+        console.log('sendResult', txid, nfts);
+        return {
+            txid,
+            rawtx: tx.toString()
+        };
     }
 
-    static async deploy(opts: NFTDeployOptsInterface, mintAddress: any, dataOuts: string[]): Promise<{ txid: string, nfts: NFTInterface[] }> {
+    static async deploy(opts: NFTDeployOptsInterface, mintAddress: any, satoshis: number, editions: number, dataOuts: string[]): Promise<{ txid: string, nfts: NFTInterface[] }> {
         if (typeof mintAddress !== 'string') {
             throw new InvalidArgumentError();
         }
         const options = Object.assign({}, {
-            satoshis: 300,
-            editions: 1,
             isTestnet: false,
             sendTx: Resolver.sendTx,
             fetchUtxos: Resolver.fetchUtxos
@@ -126,23 +183,25 @@ export class NFT implements NFTInterface {
         const utxos = await options.fetchUtxos(fundingAddress.toString())
         const tx = new bsv.Transaction()
         tx.from(utxos);
-        for (let i = 0; i < options.editions; i++) {
+        for (let i = 0; i < editions; i++) {
             tx.addOutput(new bsv.Transaction.Output({
                 script: getNFT(expectedMintAddress.toHash160Bytes()).lockingScript,
-                satoshis: options.satoshis
+                satoshis
             }))
         }
-        for (let i = 0; i < dataOuts.length; i++) {
-            tx.addOutput(new bsv.Transaction.Output({
-                script: bsv.Script.fromASM('OP_FALSE OP_RETURN ' + Buffer.from(dataOuts[i], 'utf8').toString('hex')),
-                satoshis: 0
-            }))
+        if (dataOuts) {
+            for (let i = 0; i < dataOuts.length; i++) {
+                tx.addOutput(new bsv.Transaction.Output({
+                    script: bsv.Script.fromASM('OP_FALSE OP_RETURN ' + Buffer.from(dataOuts[i], 'utf8').toString('hex')),
+                    satoshis: 0
+                }))
+            }
         }
         tx.change(addressString).sign(options.fundingPrivateKey)
         const txid = await options.sendTx(tx);
 
         const nfts: NFTInterface[] = [];
-        for (let i = 0; i < options.editions; i++) {
+        for (let i = 0; i < editions; i++) {
             const nft = await NFT.fromTransactions([tx.toString()], i, options.isTestnet)
             nfts.push(nft);
         }

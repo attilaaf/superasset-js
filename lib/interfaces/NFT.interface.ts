@@ -1,7 +1,9 @@
  
 import * as bsv from 'bsv';
+import { String } from 'scryptlib/dist';
 import { BitcoinAddress } from '../BitcoinAddress';
 import { MintInfo } from "./MintInfo.interface";
+import { NFTMintOptsInterface } from './NFTMintOpts.interface';
 import { OpResult } from './OpResult.interface';
 import { Records } from './Record.interface';
  
@@ -15,7 +17,7 @@ export interface NFTInterface {
     // Get Deploy op return datas
     getDeployDatas: (encoding: 'hex' | 'utf8') => string[];
     // Mint to the first owner
-    mint: (firstOwner: string, dataOuts?: string[]) => Promise<OpResult | null>;
+    mint: (opts: NFTMintOptsInterface, firstOwner: string, satoshis: number, dataOuts: string[]) => Promise< {txid: string, rawtx: string}>;
     // Update records
     update: (records: Array<{ type: string, name: string, value: string, action?: 'set' | 'delete' }>) => Promise<OpResult>;
     // Get the records
