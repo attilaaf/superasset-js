@@ -103,7 +103,7 @@ export class NFT implements NFTInterface {
         this.initialized = true;
     }
 
-    public async mint(opts: NFTMintOptsInterface, firstOwner: string, satoshis: number = 300, dataOuts: string[] = []): Promise<{ txid: string, rawtx: string }> {
+    public async mint(opts: NFTMintOptsInterface, firstOwner: string, satoshis: number = 1, dataOuts: string[] = []): Promise<{ txid: string, rawtx: string }> {
         if (typeof firstOwner !== 'string') {
             throw new InvalidArgumentError();
         }
@@ -123,7 +123,6 @@ export class NFT implements NFTInterface {
             script: nftClass.lockingScript,
             satoshis,
         }))
-
         if (dataOuts) {
             for (let i = 0; i < dataOuts.length; i++) {
                 tx.addOutput(new bsv.Transaction.Output({
@@ -139,7 +138,6 @@ export class NFT implements NFTInterface {
             const outputSatsWithSize = new Bytes(num2bin(satoshis, 8) + `${outputSizeWithLength}24`);
             const preimage = generatePreimage(true, tx, output.script, output.satoshis, sighashTypeAll);
             const sig = signTx(tx, options.fundingPrivateKey, output.script, output.satoshis, output.outputIndex, sighashTypeSingle);
-            // const sig = await options.callback(this.rawtxs, transferTx.toString(), claimTxObject.outputs[0].script, claimTxObject.outputs[0].satoshis, 0, sighashTypeAll, options.isRemote);
             console.log('preimage', preimage);
             console.log('outputSatsWithSize', outputSatsWithSize);
             console.log('receiveAddressWithSize', receiveAddressWithSize);
@@ -157,10 +155,6 @@ export class NFT implements NFTInterface {
         });
         const txid = await options.sendTx(tx);
         const nfts: NFTInterface[] = [];
-        /* for (let i = 0; i < options.editions; i++) {
-             const nft = await NFT.fromTransactions([tx.toString()], i, options.isTestnet)
-             nfts.push(nft);
-         }*/
         console.log('sendResult', txid, nfts);
         return {
             txid,
@@ -235,21 +229,15 @@ export class NFT implements NFTInterface {
         if (!NFT.isP2NFTPKH(mintTx, initialOutputIndex)) {
             throw new InvalidP2NFTPKHError();
         }
-
         const assetIdHex = mintTx.outputs[initialOutputIndex].script.chunks[0].buf.toString('hex');
         const addressHex = mintTx.outputs[initialOutputIndex].script.chunks[1].buf.toString('hex');
-
         if (assetIdHex !== '000000000000000000000000000000000000000000000000000000000000000000000000') {
             throw new InvalidArgumentError();
         }
-
-        const mintTxId = mintTx.hash;
         const assetId = Buffer.from(mintTx.hash, 'hex').reverse().toString('hex') + intToLE(initialOutputIndex);
-
+        console.log('MINT TXID AND ASSET', mintTx.hash, initialOutputIndex, assetId);
         let prefixMap = {};
-        prefixMap[`${assetId}`] = mintTx;
-        // this.claimTx = mintTx.toHex();
-        let prevTx = mintTx;
+        prefixMap[`${assetId}`] = true;
         let address;
         if (isTestnet) {
             address = new bsv2.Address.Testnet();
@@ -257,29 +245,49 @@ export class NFT implements NFTInterface {
         } else {
             address = new bsv2.Address();
         }
-        let ownerAddress = BitcoinAddress.fromHash160Buf(prevTx.outputs[initialOutputIndex].script.chunks[1].buf, isTestnet);
+        let kvData: { [key: string]: any} = {};
+        let ownerAddress = BitcoinAddress.fromHash160Buf(mintTx.outputs[initialOutputIndex].script.chunks[1].buf, isTestnet);
         for (let i = 1; i < rawtxs.length; i++) {
-            const tx = new bsv.Transaction(rawtxs[i]); // bsv2.Tx.fromBuffer(Buffer.from(rawtxs[i], 'hex'));
-            const txId = tx.hash;
-
-            if (!NFT.isP2NFTPKH(tx, 0)) {
-                throw new InvalidP2NFTPKHError();
-            }
-
-            const reverseTxId = Buffer.from(txId, 'hex').reverse().toString('hex');
-            const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
-            // Enforce that each spend in the chain spends something from before
-            if (!prefixMap[prevOutpoint]) {
-                throw new InvalidChainError();
-            }
-            // Look for records for building the zone records
-            // Clear off the map to ensure a rawtx must spend directly of it's parent NFT output
-            prefixMap = {};
-            prefixMap[reverseTxId + intToLE(outputIndex)] = true;
-            prevTx = tx;
-            ownerAddress = new BitcoinAddress(address.fromPubKeyHashBuf(prevTx.outputs[outputIndex].script.chunks[1].buf));
+            console.log('iteration', i);
+            const processResult: { ownerAddress, kvData, prefixMap } = await NFT.processTxIteration(prefixMap, rawtxs[i], kvData, isTestnet);
+            ownerAddress = processResult.ownerAddress;
+            kvData = processResult.kvData;
+            prefixMap = processResult.prefixMap;
         }
         return new NFT(rawtxs, ownerAddress, initialOutputIndex, deployDatas);
+    }
+
+    static async processTxIteration(prefixMap: {[key: string]: any }, rawtx: string, kvData: { [ key: string]: any }, isTestnet = false) {
+        const tx = new bsv.Transaction(rawtx);  
+        const txId = tx.hash;
+        console.log('processTxIteration', txId, prefixMap);
+        if (!NFT.isP2NFTPKH(tx, 0)) {
+            throw new InvalidP2NFTPKHError();
+        }
+        const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
+        // Enforce that each spend in the chain spends something from before
+        console.log('expecting prevOutput to be in prefixmap: ', prevOutpoint)
+        if (!prefixMap[prevOutpoint]) {
+            console.log('prefixMap NOT FOUND!!!', tx, tx.hash, prefixMap, prevOutpoint, prevTxId, outputIndex)
+            throw new InvalidChainError();
+        }
+        console.log('prefixMap does exist fine------', tx.hash, prefixMap, prevOutpoint)
+        let address;
+        if (isTestnet) {
+            address = new bsv2.Address.Testnet();
+            address.versionByteNum = bsv2.Constants.Testnet.Address.pubKeyHash;
+        } else {
+            address = new bsv2.Address();
+        }
+        prefixMap = {};
+        const reverseTxId = Buffer.from(txId, 'hex').reverse().toString('hex');
+        console.log('added to prefixMap', reverseTxId + intToLE(outputIndex));
+        prefixMap[reverseTxId + intToLE(outputIndex)] = true;
+        return {
+            ownerAddress: new BitcoinAddress(address.fromPubKeyHashBuf(tx.outputs[outputIndex].script.chunks[1].buf)),
+            kvData: kvData,
+            prefixMap
+        };
     }
 
     static isP2NFTPKH(tx: bsv.Transaction, outputIndex = 0): boolean {

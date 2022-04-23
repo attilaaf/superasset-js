@@ -37,7 +37,6 @@ describe('NFT Mint Update e2e', () => {
       const firstOwner = mintAddress;
       console.log('nfts', nfts)
       const mintResult = await nft.mint(opts, firstOwner, 1, []);
-
       console.log('nfts', mintResult, nfts)
    });
 });

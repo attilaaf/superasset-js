@@ -7,8 +7,10 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && gulp build",
-    "test": "mocha --reporter spec"
+    "test": "mocha --timeout=300000 --reporter spec",
+    "nfttest": "mocha 'test/**/NFT-test.js' --timeout=300000 --reporter spec"
   },
+ 
   "repository": {
     "type": "git",
     "url": "git+https://github.com/attilaaf/superasset-js.git"

@@ -106,6 +106,7 @@ export class Resolver implements ResolverInterface {
                     return tx.hash;
                 }
             }
+            console.log('error', error);
             throw error
         }
     }

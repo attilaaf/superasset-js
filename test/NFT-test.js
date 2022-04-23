@@ -10,8 +10,8 @@ var { privateKey } = require('../privateKey');
 var { bsv, toHex, num2bin } = require('scryptlib');
 const { nftDeploy, nftTx1, nftMint, nftMelt } = require('./nft-sample.js');
 
-describe('NFT', () => {
-   it('#fromTransactions should throw invalid empty', async () => {
+describe('NFTtest', () => {
+   it('NFT #fromTransactions should throw invalid empty', async () => {
       const rawtxs = [];
       try {
          await index.NFT.fromTransactions(rawtxs);
@@ -79,6 +79,7 @@ describe('NFT', () => {
          expect(true).to.be.false;
       }
       catch (err) {
+         console.log('-')
          if (!(err instanceof index.InvalidP2NFTPKHError)) {
             console.log('Unexpected exception caught', err);
          }

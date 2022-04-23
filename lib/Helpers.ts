@@ -10,6 +10,7 @@ export const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGH
 const MSB_THRESHOLD = 0x7e;
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.prevTxId.toString('hex');
+    console.log('prevTxId', prevTxId);
     const outputIndex = txIn.outputIndex;
     return {
         outputIndex,
