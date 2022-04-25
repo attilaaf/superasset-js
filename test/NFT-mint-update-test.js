@@ -9,6 +9,14 @@ var index = require('../dist/index.js');
 // REPLACE with your own private keys
 var { privateKey } = require('../privateKey');
 
+const sleeper = async (seconds) => {
+   return new Promise((resolve) => {
+      setTimeout(() => {
+         resolve();
+      }, seconds * 1000);
+   })
+}
+
 describe('NFT Mint Update e2e', () => {
    it('#deploy should successfully mint', async () => {
       const mintAddress = privateKey.toAddress().toString();
@@ -36,7 +44,9 @@ describe('NFT Mint Update e2e', () => {
       const nft = nfts[0];
       const firstOwner = mintAddress;
       console.log('nfts', nfts)
+      console.log('About to mint in 5 seconds...')
+      await sleeper(5);
       const mintResult = await nft.mint(opts, firstOwner, 1, []);
-      console.log('nfts', mintResult, nfts)
+      console.log('mintResult', mintResult)
    });
 });

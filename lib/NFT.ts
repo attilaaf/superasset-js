@@ -107,6 +107,13 @@ export class NFT implements NFTInterface {
         if (typeof firstOwner !== 'string') {
             throw new InvalidArgumentError();
         }
+
+        if (this.rawtxs.length !== 1) {
+            console.log('Cannot mint if it was not deployed');
+            throw new InvalidArgumentError();
+        }
+        const mintTx = new bsv.Transaction(this.rawtxs[0]);
+
         const options = Object.assign({}, {
             isTestnet: false,
             sendTx: Resolver.sendTx,
@@ -118,6 +125,14 @@ export class NFT implements NFTInterface {
         const utxos = await options.fetchUtxos(fundingAddress.toString())
         const tx = new bsv.Transaction();
         const nftClass = getNFT(firstOwnerAddress.toHash160Bytes());
+
+        tx.addInput(new bsv.Transaction.Input({
+            prevTxId: mintTx.hash,
+            outputIndex: this.initialOutputIndex,
+            script: new bsv.Script(), // placeholder
+            output: mintTx.outputs[this.initialOutputIndex]
+        }));
+
         tx.from(utxos);
         tx.addOutput(new bsv.Transaction.Output({
             script: nftClass.lockingScript,
@@ -131,8 +146,11 @@ export class NFT implements NFTInterface {
                 }))
             }
         }
-        tx.change(addressString).sign(options.fundingPrivateKey)
-        tx.setInputScript(0, async (tx, output) => {
+        tx.change(addressString)
+        
+        console.log('about to set input tx', tx);
+        tx.setInputScript(0, (tx, output) => {
+            console.log('setInputScript')
             const receiveAddressWithSize = new Bytes('14' + firstOwnerAddress.toHash160Bytes());
             const outputSizeWithLength = (nftClass.lockingScript.toHex().length / 2).toString(16);
             const outputSatsWithSize = new Bytes(num2bin(satoshis, 8) + `${outputSizeWithLength}24`);
@@ -143,7 +161,7 @@ export class NFT implements NFTInterface {
             console.log('receiveAddressWithSize', receiveAddressWithSize);
             console.log('sig', sig);
             console.log('options.fundingPrivateKey.PublicKey', options.fundingPrivateKey.publicKey);
-            const unlockScript = tx.unlock(
+            const unlockScript = nftClass.unlock(
                 preimage,
                 outputSatsWithSize,
                 receiveAddressWithSize,
@@ -151,8 +169,13 @@ export class NFT implements NFTInterface {
                 sig,
                 new PubKey(toHex(options.fundingPrivateKey.publicKey))
             ).toScript();
+            console.log('log input script', unlockScript.toHex());
             return unlockScript;
         });
+        console.log('right before SIGNING');
+        tx.sign(options.fundingPrivateKey);
+
+        console.log('right before send');
         const txid = await options.sendTx(tx);
         const nfts: NFTInterface[] = [];
         console.log('sendResult', txid, nfts);
@@ -235,7 +258,6 @@ export class NFT implements NFTInterface {
             throw new InvalidArgumentError();
         }
         const assetId = Buffer.from(mintTx.hash, 'hex').reverse().toString('hex') + intToLE(initialOutputIndex);
-        console.log('MINT TXID AND ASSET', mintTx.hash, initialOutputIndex, assetId);
         let prefixMap = {};
         prefixMap[`${assetId}`] = true;
         let address;
@@ -248,7 +270,6 @@ export class NFT implements NFTInterface {
         let kvData: { [key: string]: any} = {};
         let ownerAddress = BitcoinAddress.fromHash160Buf(mintTx.outputs[initialOutputIndex].script.chunks[1].buf, isTestnet);
         for (let i = 1; i < rawtxs.length; i++) {
-            console.log('iteration', i);
             const processResult: { ownerAddress, kvData, prefixMap } = await NFT.processTxIteration(prefixMap, rawtxs[i], kvData, isTestnet);
             ownerAddress = processResult.ownerAddress;
             kvData = processResult.kvData;
@@ -260,18 +281,14 @@ export class NFT implements NFTInterface {
     static async processTxIteration(prefixMap: {[key: string]: any }, rawtx: string, kvData: { [ key: string]: any }, isTestnet = false) {
         const tx = new bsv.Transaction(rawtx);  
         const txId = tx.hash;
-        console.log('processTxIteration', txId, prefixMap);
         if (!NFT.isP2NFTPKH(tx, 0)) {
             throw new InvalidP2NFTPKHError();
         }
         const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
         // Enforce that each spend in the chain spends something from before
-        console.log('expecting prevOutput to be in prefixmap: ', prevOutpoint)
         if (!prefixMap[prevOutpoint]) {
-            console.log('prefixMap NOT FOUND!!!', tx, tx.hash, prefixMap, prevOutpoint, prevTxId, outputIndex)
             throw new InvalidChainError();
         }
-        console.log('prefixMap does exist fine------', tx.hash, prefixMap, prevOutpoint)
         let address;
         if (isTestnet) {
             address = new bsv2.Address.Testnet();
@@ -281,7 +298,6 @@ export class NFT implements NFTInterface {
         }
         prefixMap = {};
         const reverseTxId = Buffer.from(txId, 'hex').reverse().toString('hex');
-        console.log('added to prefixMap', reverseTxId + intToLE(outputIndex));
         prefixMap[reverseTxId + intToLE(outputIndex)] = true;
         return {
             ownerAddress: new BitcoinAddress(address.fromPubKeyHashBuf(tx.outputs[outputIndex].script.chunks[1].buf)),
