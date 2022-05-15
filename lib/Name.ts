@@ -74,20 +74,16 @@ export class Name implements NameInterface {
             throw new RootOutputHashMismatchError();
         }
         this.expectedRoot = calculatedRoot;
-        
         const treeProcessor: TreeProcessorInterface = new TreeProcessor();
         const result: PrefixParseResult = await treeProcessor.validatePrefixTree(rawtxs);
         this.rawtxIndexForClaim = result.rawtxIndexForClaim;
         await this.validateBuildRecords();
         this.nameString = result.nameString;
-        console.log('rawtxIndexForClaim', this.rawtxIndexForClaim);
-       // this.nameNFT = await NFT.createNFT(this.rawtxs, this.isTestnet());
+        // this.nameNFT = await NFT.createNFT(this.rawtxs, this.isTestnet());
         this.initialized = true;
     }
 
     private async validateBuildRecords() {
-        return;
-       /* console.log('await this.validateBuildRecords();');
         const rawtxs = this.rawtxs.slice(this.rawtxIndexForClaim);
         const mintTx = bsv2.Tx.fromBuffer(Buffer.from(rawtxs[0], 'hex'));
         const assetTxId = (await mintTx.hash()).toString('hex')
@@ -95,6 +91,7 @@ export class Name implements NameInterface {
         let prefixMap = {};
         prefixMap[`${assetId}`] = mintTx;
         this.claimTx = mintTx.toHex();
+        /*
         let prevTx = mintTx;
         let address;
         if (this.opts?.testnet) {
@@ -263,6 +260,8 @@ export class Name implements NameInterface {
         const SuperAssetFeeBurnerClass = buildContractClass(SuperAssetFeeBurner());
         const superAssetFeeBurner = new SuperAssetFeeBurnerClass(feeBurnerRefundAmount);
         superAssetFeeBurner.replaceAsmVars(asmVarsAll);
+
+        console.log('claimTxObject', claimTxObject, utxos);
         transferTx.addInput(new bsv.Transaction.Input({
             prevTxId: claimTxObject.hash,
             outputIndex: 0,

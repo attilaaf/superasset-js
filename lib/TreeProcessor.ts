@@ -48,18 +48,21 @@ export class TreeProcessor implements TreeProcessorInterface {
         let lastExtensionOutput: ExtensionOutputData | null = null;
         for (let i = 0; i < rawtxs.length; i++) {
             currTx = new bsv.Transaction(rawtxs[i]);
+            const reverseTxid = Buffer.from(currTx.hash, 'hex').reverse().toString('hex');
             if (i === 0) {
                 await this.validateRootTxFields(currTx);
             } else if (i >= 1) {
                 const { prevOutpoint, outputIndex } = prevOutpointFromTxIn(currTx.inputs[0]);
                 // Enforce that each spend in the chain spends something from before
                 if (!prefixMap[prevOutpoint]) {
+                    console.log('PrefixChainMismatchError 1', prefixMap, prevOutpoint)
                     throw new PrefixChainMismatchError();
                 }
                 // It is the first spend of the root; bootstrapped
                 await this.validateOutputs(currTx)
                 lastExtensionOutput = await parseExtensionOutputData2(prefixMap[prevOutpoint].outputs[outputIndex], prefixMap[prevOutpoint].hash, outputIndex, currTx);
                 if (!lastExtensionOutput) {
+                    console.log('PrefixChainMismatchError 2', lastExtensionOutput)
                     throw new PrefixChainMismatchError();
                 }
                 if (i > 1) {
@@ -71,7 +74,7 @@ export class TreeProcessor implements TreeProcessorInterface {
                     const buf = Buffer.allocUnsafe(4);
                     buf.writeInt32LE(o);
                     const outNumString = buf.toString('hex');
-                    prefixMap[currTx.hash + outNumString] = currTx;
+                    prefixMap[reverseTxid + outNumString] = currTx;
                 }
             }
         }
@@ -92,6 +95,7 @@ export class TreeProcessor implements TreeProcessorInterface {
         requiredLetterOutputIndex++;
         const expectedExtensionOutput = await parseExtensionOutputData2(currTx.outputs[requiredLetterOutputIndex], currTx.hash, requiredLetterOutputIndex, currTx);
         if (!expectedExtensionOutput) {
+            console.log('PrefixChainMismatchError 3', expectedExtensionOutput)
             throw new PrefixChainMismatchError();
         }
         const partialResult: RequiredTransactionPartialResult = {

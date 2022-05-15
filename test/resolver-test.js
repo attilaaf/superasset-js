@@ -200,13 +200,13 @@ describe('Resolver', () => {
       try {
          await resolver.getName('ba')
       } catch (err){
+         console.log('err', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;
          expect(partial.fulfilledName).to.equal('b');
          expect(partial.expectedExtensionOutput.charHex).to.equal('61');
          expect(partial.expectedExtensionOutput.char).to.equal('a');
-
          console.log('partial', partial);
          expect(partial.expectedExtensionOutput.outputIndex).to.equal(13);
          expect(partial.lastExtensionOutput.char).to.equal('b');
@@ -237,6 +237,7 @@ describe('Resolver', () => {
       try {
          await resolver.getName('bat')
       } catch (err){
+         console.log('err expected MissingNextTransactionError ', err);
          expect(err instanceof index.MissingNextTransactionError).to.be.true;
          // Verify that the next transaction will be for the 'A' after the 'B'
          const partial = err.requiredTransactionPartialResult;

@@ -127,8 +127,9 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
     }
     for (let i = 1; i < rawtxs.length; i++) {
         const tx = new bsv.Transaction(rawtxs[i]);
-        console.log('prefixMap start', prefixMap, tx);
+       // console.log('prefixMap start', prefixMap, tx);
         const txid = tx.hash;
+        const reverseTxid = Buffer.from(txid, 'hex').reverse().toString('hex');
         const { prevOutpoint, outputIndex, prevTxId } = prevOutpointFromTxIn(tx.inputs[0]);
         // Enforce that each spend in the chain spends something from before
         if (!prefixMap[prevOutpoint]) {
@@ -142,12 +143,13 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
                     isClaimed: true,
                 }
             } else {
-                console.log('prevOutpoint', tx, prevOutpoint, outputIndex, prevPotentialClaimNft);
+                console.log('PrefixChainMismatchError', prevPotentialClaimNft, prevOutpoint)
                 throw new PrefixChainMismatchError();
             }
         } else {
             // Do not concat the root node, skip it
             if (i > 1) {
+                console.log('i', i);
                 const prevTxOut = prevTx.outputs[outputIndex];
                 const letter = prevTxOut.script.chunks[5].buf.toString('ascii');
                 nameString += letter; // Add the current letter that was spent
@@ -155,13 +157,12 @@ export async function validatePrefixTree(rawtxs: string[]): Promise<PrefixParseR
         }
         // Clear off the map to ensure a rawtx must spend something directly of it's parent
         prefixMap = {};
-        prevPotentialClaimNft = Buffer.from(txid, 'hex').reverse().toString('hex') + '00000000'; // Potential NFT is always at position 1
-        console.log('prevPotentialClaimNft', prevPotentialClaimNft);
+        prevPotentialClaimNft = reverseTxid + '00000000'; // Potential NFT is always at position 1
         for (let o = 1; o < 38; o++) {
             const buf = Buffer.allocUnsafe(4);
             buf.writeInt32LE(o);
             const outNumString = buf.toString('hex');
-            prefixMap[txid + outNumString] = tx.outputs[o];
+            prefixMap[reverseTxid + outNumString] = tx.outputs[o];
         }
         prevTx = tx;
     }
