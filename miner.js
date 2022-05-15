@@ -79,7 +79,7 @@ console.log('originalTx', originalTx);
 
 console.log('after input')
 const textPushPrefix = '04ffff001d010445';
-const txt  = Buffer.from('The Times 03/Jan/2009 Chancellor on brink of second bailout for banks', 'utf8');
+const txt  = Buffer.from('The New York Times 12/May/2022 The Milky Way\'s Black Hole Comes to Light', 'utf8');
 const txtHex = txt.toString('hex');
 const opCheckSig = 'ac';
 
@@ -98,10 +98,24 @@ initialCoinbase.addInput(new bsv.Transaction.Input({
     })
 );
 
-console.log('txtHex', txtHex);
-const out = bsv.Script.fromString('41' + '04678afdb0fe5548271967f1a67130b7105cd6a828e03909' + 'a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112' + 'de5c384df7ba0b8d578a4c702b6bf11d5f' + opCheckSig);
+const addressStr = '18FuiFFQTVKU5W32EMzVHdBHcCFhZLUg1d'; // novo coins
+const address = bsv2.Address.fromString(addressStr);
+const hash160 = address.toHex().substring(2);
 
-console.log('out', out);
+
+const addressStrSatoshi = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'; // novo coins
+const addressSatoshi = bsv2.Address.fromString(addressStrSatoshi);
+const hash160Satoshi = addressSatoshi.toHex().substring(2);
+
+console.log('setup addresses', hash160, hash160Satoshi);
+//        4f9ab47a237441c0dc61dcd39fd92709f281b033
+// 76a914 fc0319ac35bd66511bae0015e937d159c6bf7ccd 88ac
+                //76a914     4f9ab47a237441c0dc61dcd39fd92709f281b033     88ac
+const newP2pkh = '76a914' + '4f9ab47a237441c0dc61dcd39fd92709f281b033' + '88ac';
+
+const out = bsv.Script.fromString(newP2pkh);
+
+console.log('out', out.toHex());
 initialCoinbase.addOutput(
     new bsv.Transaction.Output({
         script: out,
@@ -111,9 +125,64 @@ initialCoinbase.addOutput(
 
 // 010000000100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a010000008f04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b7304678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000
  
-console.log('coinbase tx EMULATED', initialCoinbase.hash, initialCoinbase.toString(), initialCoinbase);
+/*
+Starts with zeroes... check POW 1652639111106
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f3887458162ffff001dadc18210 010000000000000000000000000000000000000000000000000000000000000000000000b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f3887458162ffff001dadc18210 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer b8 21 62 c6 15 e4 c2 5c bb 41 81 6b e4 79 45 28 ec 81 2a 2d c0 bc f3 e7 71 c7 86 9b cb 4a 5f 38>,
+    time: 1652639111,
+    timestamp: 1652639111,
+    bits: 486604799,
+    nonce: 277004717,
+    _id: '000000004019ff228581d68789d83b80cdbbb57973347df0b1df3c3e4db67a8e'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer b8 21 62 c6 15 e4 c2 5c bb 41 81 6b e4 79 45 28 ec 81 2a 2d c0 bc f3 e7 71 c7 86 9b cb 4a 5f 38>,
+    time: 1652639111,
+    timestamp: 1652639111,
+    bits: 486604799,
+    nonce: 277004717,
+    _id: '000000004019ff228581d68789d83b80cdbbb57973347df0b1df3c3e4db67a8e'
+  }
+}
+Done
+
+
+*/
+
+console.log('coinbase tx EMULATED', initialCoinbase.hash, initialCoinbase.toString(), initialCoinbase, h.length);
 
  
+if (initialCoinbase.hash !== 'b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f38') {
+    throw new Error('mismatch hash b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f38');
+}
+
+function genOriginalBlock0Hash(merkle, timeInt, nonceInt) {
+    const v = '01000000';
+    const prevHash =   '0000000000000000000000000000000000000000000000000000000000000000';// 6cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
+    //const merkleRoot = merkle;
+    const bits = targetHex;
+    const nonce = intToLE(nonceInt);
+    const time = intToLE(timeInt);
+    const merkleReversed = Buffer.from(merkle, 'hex').reverse().toString('hex');
+
+    // const boostStrHeader = '0100000000000000000000000000000000000000000000000000000000000000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
+    // const boostStrHeader = '010000009500c43a25c624520b5100adf82cb9f9da72fd2447a496bc600b0000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
+    const boostStrHeader = v + prevHash + merkleReversed + time + bits + nonce;
+    //console.log('boostStrHeader.length', v.length, prevHash.length, merkleRoot.length, time.length, bits.length, nonce.length, boostStrHeader.length);
+    return getSha256Sha256Hex2(boostStrHeader);
+}
+
+const h = Buffer.from(initialCoinbase.hash, 'hex').reverse().toString('hex');
+const blockhash = genOriginalBlock0Hash(originalTx.hash, 1231006505, 2083236893);
+
+console.log('blockhash', blockhash);
 let time = getTimeHex();
 while (!found) {
 
@@ -121,7 +190,7 @@ while (!found) {
   //  const str = '0100000000000000000000000000000000000000000000000000000000000000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ece238062ffff001d6c2b7d06';
     const v = '01000000';
     const prevHash =   '0000000000000000000000000000000000000000000000000000000000000000';// 6cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
-    const merkleRoot = '6cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600e'; // a6c8cb4db3936a1ae3143991';
+    const merkleRoot = h; // a6c8cb4db3936a1ae3143991';
     const bits = targetHex;
     const nonce = intToLE(counter);
     
