@@ -1,7 +1,7 @@
 'use strict';
 const spawn = require('child_process').spawn;
 const minerPrivateKey = require('./minerPrivateKey.js');
-
+require('dotenv').config();
 
 const options = {
   stdio: [
@@ -16,7 +16,7 @@ let isRunning = false;
 const spawnMiner = async (addressStr)  => {
   console.log('Spawning...', addressStr)
   // ./minerd --threads=9 --coinbase-addr=18FuiFFQTVKU5W32EMzVHdBHcCFhZLUg1d -o 127.0.0.1:8332 -O USER:PASSWORD --no-longpoll --no-getwork  --no-stratum --algo=sha256d --debug
-  proc = spawn('./minerd', [`--coinbase-addr=${addressStr}`, '-o', '127.0.0.1:8332', '-O', 'USER:PASSWORD', '--no-longpoll', '--no-getwork', '--no-stratum', '--algo=sha256d', '--debug'], options);
+  proc = spawn('./minerd', [`--coinbase-addr=${addressStr}`, '-o', process.env.RPCHOSTPORT, '-O', `${process.env.RPCUSER}:${process.env.RPCPASS}`, '--no-longpoll', '--no-getwork', '--no-stratum', '--algo=sha256d', '--debug'], options);
   isRunning = true;
   let output = '';
   proc.stderr.on('data', (chunk) => {

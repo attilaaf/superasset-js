@@ -3,7 +3,6 @@ const { bsv } = require('scryptlib');
 const bip39 = require('bip39');
 const fs = require('fs');
 const crypto = require('crypto');
-
 var randomBytes = crypto.randomBytes(16); // 128 bits is enough
 var mnemonic = bip39.entropyToMnemonic(randomBytes.toString('hex'));
 
@@ -63,7 +62,6 @@ const generateKeysFromPhrase = (phrase, index) => {
     'privateKeyWif': childn.privateKey.toWIF(),
   });
 
- 
   return {
     xpub: hdPublicKey.toString(),
     xprv: hdPrivateKey.toString(),
@@ -75,13 +73,12 @@ const generateKeysFromPhrase = (phrase, index) => {
   }
 }
 
-// generateKeysFromPhrase();
 const getNextAddressFromIndex = async () => {
-  if (!process.env.phrase) {
+  if (!process.env.PHRASE) {
     throw new Error('no phrase set');
   }
   const currentIndex = await getCurrentAddressIndex();
-  const keys = generateKeysFromPhrase(process.env.phrase, currentIndex);
+  const keys = generateKeysFromPhrase(process.env.PHRASE, currentIndex);
   return keys.address;
 };
 
