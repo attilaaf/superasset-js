@@ -93,7 +93,7 @@ initialCoinbase.addInput(new bsv.Transaction.Input({
         script: new bsv.Script.fromASM('ffff001d' + ' 04 ' + txtHex), // placeholder
         output: {
             script: new bsv.Script(),
-            satoshis: 5000000000
+            satoshis: 500000000000
         }
     })
 );
@@ -124,43 +124,247 @@ initialCoinbase.addOutput(
 )
 
 // 010000000100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a010000008f04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b7304678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000
- 
+  
+
 /*
-Starts with zeroes... check POW 1652639111106
-boostString 010000000000000000000000000000000000000000000000000000000000000000000000b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f3887458162ffff001dadc18210 010000000000000000000000000000000000000000000000000000000000000000000000b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f3887458162ffff001dadc18210 BoostPowStringModel {
+
+// Testnet (v3)
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8e08f8162ffff001dcddf9f05 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8e08f8162ffff001dcddf9f05 BoostPowStringModel {
   _blockheader: BlockHeader {
     version: 1,
     prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
-    merkleRoot: <Buffer b8 21 62 c6 15 e4 c2 5c bb 41 81 6b e4 79 45 28 ec 81 2a 2d c0 bc f3 e7 71 c7 86 9b cb 4a 5f 38>,
-    time: 1652639111,
-    timestamp: 1652639111,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652658144,
+    timestamp: 1652658144,
     bits: 486604799,
-    nonce: 277004717,
-    _id: '000000004019ff228581d68789d83b80cdbbb57973347df0b1df3c3e4db67a8e'
+    nonce: 94363597,
+    _id: '00000000c1b584ed4e17cb56d0da8597cf0c1ba714c25e7d9e75b85ef071d680'
   }
 }
 POW is valid BoostPowStringModel {
   _blockheader: BlockHeader {
     version: 1,
     prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
-    merkleRoot: <Buffer b8 21 62 c6 15 e4 c2 5c bb 41 81 6b e4 79 45 28 ec 81 2a 2d c0 bc f3 e7 71 c7 86 9b cb 4a 5f 38>,
-    time: 1652639111,
-    timestamp: 1652639111,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652658144,
+    timestamp: 1652658144,
     bits: 486604799,
-    nonce: 277004717,
-    _id: '000000004019ff228581d68789d83b80cdbbb57973347df0b1df3c3e4db67a8e'
+    nonce: 94363597,
+    _id: '00000000c1b584ed4e17cb56d0da8597cf0c1ba714c25e7d9e75b85ef071d680'
+  }
+}
+
+// Main net
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b82d888162ffff001db0ca5201 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b82d888162ffff001db0ca5201 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652656173,
+    timestamp: 1652656173,
+    bits: 486604799,
+    nonce: 22203056,
+    _id: '000000001820c1c5123cf4dfc644e3bcab7cbc9372515d8cb6b031ddbd315565'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652656173,
+    timestamp: 1652656173,
+    bits: 486604799,
+    nonce: 22203056,
+    _id: '000000001820c1c5123cf4dfc644e3bcab7cbc9372515d8cb6b031ddbd315565'
+  }
+}
+
+
+
+//   
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+
+
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+
+
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8aa938162ffff001d07507d07 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652659114,
+    timestamp: 1652659114,
+    bits: 486604799,
+    nonce: 125652999,
+    _id: '000000009e571ca9c3226c11727893afd14f62f437c706a60ea504815463d9c9'
+  }
+}
+
+Done
+
+//  * Testnet (v4)
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b885b58162ffff001d0c4d6e1b 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b885b58162ffff001d0c4d6e1b BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652667781,
+    timestamp: 1652667781,
+    bits: 486604799,
+    nonce: 460213516,
+    _id: '00000000c2229a4424085ae5076af246ea705520c39d1ca1653e648db872c048'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652667781,
+    timestamp: 1652667781,
+    bits: 486604799,
+    nonce: 460213516,
+    _id: '00000000c2229a4424085ae5076af246ea705520c39d1ca1653e648db872c048'
   }
 }
 Done
 
 
+scalnet...
+
+Starts with zeroes... check POW 1652665307214
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8d9ab8162ffff001d51b0d212 010000000000000000000000000000000000000000000000000000000000000000000000385f4acb9b86c771e7f3bcc02d2a81ec284579e46b8141bb5cc2e415c66221b8d9ab8162ffff001d51b0d212 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652665305,
+    timestamp: 1652665305,
+    bits: 486604799,
+    nonce: 315797585,
+    _id: '000000004ee5e3a6232912529c9a038ea3eda5514310e3fe0788b11d430fc614'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 38 5f 4a cb 9b 86 c7 71 e7 f3 bc c0 2d 2a 81 ec 28 45 79 e4 6b 81 41 bb 5c c2 e4 15 c6 62 21 b8>,
+    time: 1652665305,
+    timestamp: 1652665305,
+    bits: 486604799,
+    nonce: 315797585,
+    _id: '000000004ee5e3a6232912529c9a038ea3eda5514310e3fe0788b11d430fc614'
+  }
+}
+Done
+
+node ./miner.js > ./5000out/1.txt &
+node ./miner.js > ./5000out/2.txt &
+node ./miner.js > ./5000out/3.txt &
+node ./miner.js > ./5000out/3.txt &
+node ./miner.js > ./5000out/4.txt &
+node ./miner.js > ./5000out/5.txt &
+node ./miner.js > ./5000out/6.txt &
+node ./miner.js > ./5000out/7.txt &
+node ./miner.js > ./5000out/8.txt &
+node ./miner.js > ./5000out/9.txt &
+node ./miner.js > ./5000out/10.txt &
+node ./miner.js > ./5000out/11.txt &
+node ./miner.js > ./5000out/12.txt &
+node ./miner.js > ./5000out/13.txt &
+node ./miner.js > ./5000out/14.txt &
+node ./miner.js > ./5000out/15.txt &
+node ./miner.js > ./5000out/16.txt &
+node ./miner.js > ./5000out/17.txt &
+node ./miner.js > ./5000out/18.txt &
+node ./miner.js > ./5000out/19.txt &
+node ./miner.js > ./5000out/20.txt &
+node ./miner.js > ./5000out/21.txt &
+node ./miner.js > ./5000out/22.txt &
+node ./miner.js > ./5000out/23.txt &
+node ./miner.js > ./5000out/24.txt &
+node ./miner.js > ./5000out/25.txt &
+node ./miner.js > ./5000out/26.txt &
+node ./miner.js > ./5000out/27.txt &
+node ./miner.js > ./5000out/28.txt &
+node ./miner.js > ./5000out/29.txt &
+node ./miner.js > ./5000out/30.txt &
+node ./miner.js > ./5000out/31.txt &
+node ./miner.js > ./5000out/32.txt &
+node ./miner.js > ./5000out/33.txt &
+node ./miner.js > ./5000out/34.txt &
+node ./miner.js > ./5000out/35.txt &
+node ./miner.js > ./5000out/18.txt &
+
+
 */
 
-console.log('coinbase tx EMULATED', initialCoinbase.hash, initialCoinbase.toString(), initialCoinbase, h.length);
+console.log('coinbase tx EMULATED', initialCoinbase.hash, initialCoinbase.toString(), initialCoinbase);
 
  
 if (initialCoinbase.hash !== 'b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f38') {
-    throw new Error('mismatch hash b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f38');
+    //throw new Error('mismatch hash b82162c615e4c25cbb41816be4794528ec812a2dc0bcf3e771c7869bcb4a5f38');
 }
 
 function genOriginalBlock0Hash(merkle, timeInt, nonceInt) {
