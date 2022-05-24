@@ -9,6 +9,10 @@ export const sighashTypeAll = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH
 export const sighashTypeSingle = Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE | Signature.SIGHASH_FORKID;
 const MSB_THRESHOLD = 0x7e;
  
+export const buildAssetFromTxIdOutputIndex = (txid, outputIndex): string => {
+    return Buffer.from(txid, 'hex').reverse().toString('hex') + intToLE(outputIndex);
+}
+
 export const prevOutpointFromTxIn = (txIn) => {
     const prevTxId = txIn.prevTxId.toString('hex');
     console.log('prevTxId', prevTxId);

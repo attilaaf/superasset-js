@@ -46,7 +46,12 @@ describe('NFT Mint Update e2e', () => {
       console.log('nfts', nfts)
       console.log('About to mint in 5 seconds...')
       await sleeper(5);
-      const mintResult = await nft.mint(opts, firstOwner, 1, []);
+      const mintOpts = {
+         isTestnet: true,
+         fundingPrivateKey: privateKey,   // Funding key used to mint the NFT
+      };
+      const currentOwnerPrivateKey = privateKey;
+      const mintResult = await nft.mint(mintOpts, currentOwnerPrivateKey, firstOwner, 1, []);
       console.log('mintResult', mintResult)
    });
 });

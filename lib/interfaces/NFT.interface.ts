@@ -17,7 +17,7 @@ export interface NFTInterface {
     // Get Deploy op return datas
     getDeployDatas: (encoding: 'hex' | 'utf8') => string[];
     // Mint to the first owner
-    mint: (opts: NFTMintOptsInterface, firstOwner: string, satoshis: number, dataOuts: string[]) => Promise< {txid: string, rawtx: string}>;
+    mint: (opts: NFTMintOptsInterface, currentOwnerPrivateKey: bsv.PrivateKey, firstOwner: string, satoshis: number, dataOuts: string[]) => Promise< {txid: string, rawtx: string}>;
     // Update records
     update: (records: Array<{ type: string, name: string, value: string, action?: 'set' | 'delete' }>) => Promise<OpResult>;
     // Get the records
