@@ -10,9 +10,8 @@ Once the contract is compiled, then copy the scrypt description file into supera
  * This is an implementation and sample usage of SuperAsset (SA10).
  *
  * Learn more:
- *  - Announcement: https://blog.matterpool.io/launch-of-superasset-sa10-nft-smart-contract-for-bitcoin/
  *  - SuperAsset white paper: https://bitcoinfiles.org/t/d6c18189966ea060452bcf59157235f2e15df3abf7383d9d450acff69cf29181
- *  - Github: https://github.com/MatterPool/superasset-js
+ *  - Github: https://github.com/SuperAsset/superasset-js
  *
  * Example transactions:
  *  - Deploy: https://whatsonchain.com/tx/afd702c8ccd5b3193f7be0afaace551430593b2e1af7264908e003f63bd5883f
