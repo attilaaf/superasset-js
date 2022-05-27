@@ -89,5 +89,6 @@ const incrementAddressIndex = async () => {
 
 module.exports = {
   getNextAddressFromIndex,
-  incrementAddressIndex
+  incrementAddressIndex,
+  generateKeysFromPhrase
 }

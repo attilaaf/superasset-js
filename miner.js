@@ -424,3 +424,74 @@ while (!found) {
 
 
 console.log('Done');
+
+/*
+
+
+for 5000
+
+Starts with zeroes... check POW 1652829474202
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000372cbaf89794aeed5e711b02e78ec4502ad8b315a987c2e2758a85e36a3f7c021f2d8462ffff001dbe261403 010000000000000000000000000000000000000000000000000000000000000000000000372cbaf89794aeed5e711b02e78ec4502ad8b315a987c2e2758a85e36a3f7c021f2d8462ffff001dbe261403 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 37 2c ba f8 97 94 ae ed 5e 71 1b 02 e7 8e c4 50 2a d8 b3 15 a9 87 c2 e2 75 8a 85 e3 6a 3f 7c 02>,
+    time: 1652829471,
+    timestamp: 1652829471,
+    bits: 486604799,
+    nonce: 51652286,
+    _id: '000000001d6e12725ff83f44321a8369ce8e8fc49e80f19ad7c0f546c5f5a23b'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 37 2c ba f8 97 94 ae ed 5e 71 1b 02 e7 8e c4 50 2a d8 b3 15 a9 87 c2 e2 75 8a 85 e3 6a 3f 7c 02>,
+    time: 1652829471,
+    timestamp: 1652829471,
+    bits: 486604799,
+    nonce: 51652286,
+    _id: '000000001d6e12725ff83f44321a8369ce8e8fc49e80f19ad7c0f546c5f5a23b'
+  }
+}
+./bitcoin-cli --rpcuser=raduser --rpcpassword=radpass getmininginfo
+Done
+eval $(ssh-agent) && ssh-add ~/.ssh/id_rad1
+rsync -av /home/test/Desktop/Linux -e  192.168.56.100:/home/test/Desktop/rsync
+
+
+
+
+
+
+
+
+Starts with zeroes... check POW 1653454717082
+boostString 010000000000000000000000000000000000000000000000000000000000000000000000372cbaf89794aeed5e711b02e78ec4502ad8b315a987c2e2758a85e36a3f7c027db78d62ffff001d4dca0a09 010000000000000000000000000000000000000000000000000000000000000000000000372cbaf89794aeed5e711b02e78ec4502ad8b315a987c2e2758a85e36a3f7c027db78d62ffff001d4dca0a09 BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 37 2c ba f8 97 94 ae ed 5e 71 1b 02 e7 8e c4 50 2a d8 b3 15 a9 87 c2 e2 75 8a 85 e3 6a 3f 7c 02>,
+    time: 1653454717,
+    timestamp: 1653454717,
+    bits: 486604799,
+    nonce: 151702093,
+    _id: '0000000083a3619e2c67d47392e50065786a9be0d273f45212ebffaff60a1229'
+  }
+}
+POW is valid BoostPowStringModel {
+  _blockheader: BlockHeader {
+    version: 1,
+    prevHash: <Buffer 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>,
+    merkleRoot: <Buffer 37 2c ba f8 97 94 ae ed 5e 71 1b 02 e7 8e c4 50 2a d8 b3 15 a9 87 c2 e2 75 8a 85 e3 6a 3f 7c 02>,
+    time: 1653454717,
+    timestamp: 1653454717,
+    bits: 486604799,
+    nonce: 151702093,
+    _id: '0000000083a3619e2c67d47392e50065786a9be0d273f45212ebffaff60a1229'
+  }
+}
+
+
+*/
