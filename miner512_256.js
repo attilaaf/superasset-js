@@ -166,10 +166,18 @@ while (!found) {
     
     // const boostStrHeader = '0100000000000000000000000000000000000000000000000000000000000000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
     // const boostStrHeader = '010000009500c43a25c624520b5100adf82cb9f9da72fd2447a496bc600b0000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
-    const boostStrHeader = v + prevHash + merkleRoot + time + bits + nonce;
+    //const boostStrHeader = v + prevHash + merkleRoot + time + bits + nonce;
+    const boostStrHeader = '010000000000000000000000000000000000000000000000000000000000000000000000372CBAF89794AEED5E711B02E78EC4502AD8B315A987C2E2758A85E36A3F7C027DB78D62FFFF001D4DCA0A09';
+
     const boostStrHeaderBuf = Buffer.from(boostStrHeader, 'hex')
     const hash = jsShaLib.sha512_256(boostStrHeaderBuf);
-    console.log('boostStrHeader.length', boostStrHeader, hash, hash.length);
+    const hash512 = jsShaLib.sha512(boostStrHeaderBuf);
+    const hash256 = getSha256Sha256Hex2(boostStrHeader);
+    console.log('boostStrHeader', boostStrHeader);
+    console.log('hash512_256', hash);
+    console.log('hash512', hash512);
+    console.log('hash256', hash256);
+
     if (hash.endsWith('000000')) {
         console.log('Starts with zeroes... check POW', (new Date()).getTime());
 
