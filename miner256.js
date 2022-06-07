@@ -1,6 +1,6 @@
 'use strict';
 //var { radjs } = require('@radiantblockchain/radjs');
-var bsv = require('bsv');
+var radjs = require('@radiantblockchain/radjs');
 var jsShaLib = require('js-sha512');
 
 const intToLE = (i) => {
@@ -32,10 +32,10 @@ while (!found) {
     
     // const boostStrHeader = '0100000000000000000000000000000000000000000000000000000000000000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
     // const boostStrHeader = '010000009500c43a25c624520b5100adf82cb9f9da72fd2447a496bc600b0000000000006cd862370395dedf1da2841ccda0fc489e3039de5f1ccddef0e834991a65600ea6c8cb4db3936a1ae3143991';
-    // const boostStrHeader = v + prevHash + merkleRoot + time + bits + nonce;
-    const boostStrHeader = '000000206EFA3DD68BA590923319095240FB570ED52AA1F60D33FC98B731308F00000000D4B377FA2AE081D121883150BCB0EB51F2D086134015C7A357195F9A846E3EA07AB69C62FFFF001D72A11F0D';
+    const boostStrHeader = v + prevHash + merkleRoot + time + bits + nonce;
+    //const boostStrHeader = '010000000000000000000000000000000000000000000000000000000000000000000000372CBAF89794AEED5E711B02E78EC4502AD8B315A987C2E2758A85E36A3F7C027DB78D62FFFF001D4DCA0A09';
 
-    const header = new bsv.BlockHeader()
+    const header = new radjs.BlockHeader()
       .fromBuffer(Buffer.from(boostStrHeader, 'hex'));
 
    // const header = new radjs.BlockHeader().fromBr(Buffer.from(boostStrHeader, 'hex'));

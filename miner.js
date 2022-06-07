@@ -78,10 +78,10 @@ const originalTx = new bsv.Transaction('0100000001000000000000000000000000000000
 console.log('originalTx', originalTx);
 
 console.log('after input')
-const textPushPrefix = '04ffff001d010445';
+ 
 const txt  = Buffer.from('The New York Times 12/May/2022 The Milky Way\'s Black Hole Comes to Light', 'utf8');
 const txtHex = txt.toString('hex');
-const opCheckSig = 'ac';
+ 
 
 
 
@@ -123,6 +123,11 @@ initialCoinbase.addOutput(
     })
 )
 
+const boostStrHeader = '000000206EFA3DD68BA590923319095240FB570ED52AA1F60D33FC98B731308F00000000D4B377FA2AE081D121883150BCB0EB51F2D086134015C7A357195F9A846E3EA07AB69C62FFFF001D72A11F0D';
+
+const header = bsv.BlockHeader.fromString(boostStrHeader);
+
+console.log('header', header.toObject(), header.getDifficulty());
 // 010000000100000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a010000008f04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b7304678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000
   
 
@@ -458,6 +463,14 @@ POW is valid BoostPowStringModel {
 ./bitcoin-cli --rpcuser=raduser --rpcpassword=radpass getmininginfo
 Done
 eval $(ssh-agent) && ssh-add ~/.ssh/id_rad1
+eval $(ssh-agent) && ssh-add ~/.ssh/id_gpu
+eval $(ssh-agent) && ssh-add ~/.ssh/id_rsa_cpu
+
+
+./bfgminer -S opencl:auto -o http://node.radiantlayerone.org:8332 -u raduser -p radpass --set-device intensity=9^C
+root@C.4631793:~/novo-bfgminer$ ./bfgminer -S opencl:auto  -o stratum+tcp://mine.bit90.io:3333 -u 137HJDdNQNJApQgagquYxmhfDVTiCoeDqt.gpumine1 -p 137HJDdNQNJApQgagquYxmhfDVTiCoeDqt
+
+
 rsync -av /home/test/Desktop/Linux -e  192.168.56.100:/home/test/Desktop/rsync
 
 

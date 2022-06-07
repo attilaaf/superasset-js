@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
+  "type": "commonjs",
   "scripts": {
     "build": "tsc && gulp build",
     "test": "mocha --timeout=30000 --reporter spec",
@@ -75,6 +76,7 @@
   },
   "dependencies": {
     "@matterpool/boostpow-js": "^1.2.32",
+    "@radiantblockchain/radjs": "^2.1.9",
     "@types/node": "^17.0.2",
     "axios": "^0.26.0",
     "bip39": "^3.0.4",
